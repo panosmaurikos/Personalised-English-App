@@ -1,0 +1,163 @@
+html, body, #root {
+  height: 100%;
+  min-height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+section {
+  min-height: 60vh;
+}
+
+/* Animation for circular background */
+@keyframes pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.8;
+  }
+}
+
+/* Animation for image */
+@keyframes float {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* Ensure consistent container styling */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+/* Smooth transitions for buttons */
+.btn {
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.navbar {
+  position: sticky !important;
+  top: 0;
+  z-index: 1000;
+}
+
+.navbar-brand img {
+  height: 32px;
+  margin-right: 8px;
+}
+
+.btn-user {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-user img {
+  width: 24px;
+  height: 24px;
+  display: block;
+  margin: 0 auto;
+}
+
+.section-home-title {
+  letter-spacing: 2px;
+}
+
+.section-home-img-bg {
+  width: 70%;
+  height: 70%;
+  background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+  animation: pulse 3s ease-in-out infinite;
+}
+
+.section-home-img {
+  max-width: 60%;
+  z-index: 2;
+  margin-bottom: 24px;
+  animation: float 2s ease-in-out infinite;
+  position: relative;
+}
+
+.section-home-dot1 {
+  width: 20px;
+  height: 20px;
+  background: #ff6b6b;
+  border-radius: 50%;
+  top: 10%;
+  left: 20%;
+  z-index: 3;
+  position: absolute;
+}
+
+.section-home-dot2 {
+  width: 15px;
+  height: 15px;
+  background: #ff8e53;
+  border-radius: 50%;
+  bottom: 15%;
+  right: 25%;
+  z-index: 3;
+  position: absolute;
+}
+
+.section-contact-inner {
+  background: linear-gradient(135deg, #f0f4ff, #e0e7ff);
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.section-contact-input {
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.section-contact-btn {
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.section-about-inner {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 4px 14px 0 rgba(102,126,234,0.10);
+  padding: 40px 32px;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+  50% { box-shadow: 0 0 40px 10px #ff8e5333; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
