@@ -265,8 +265,28 @@ section {
   max-width: 370px;
   margin: 0 32px 32px 0;
   animation: popupIn 0.2s;
+  border-radius: 20px;
 }
+
 @keyframes popupIn {
   from { transform: translateY(100px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+.contact-popup-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #dc3545; /* Bootstrap danger */
+  cursor: pointer;
+  z-index: 9999;
+  transition: color 0.2s ease;
+}
+
+.contact-popup-close:hover {
+  color: #a71d2a;
 }
