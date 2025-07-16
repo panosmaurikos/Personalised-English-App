@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 
 function App() {
   const [showAuth, setShowAuth] = useState(false);
+  const [showContactPopup, setShowContactPopup] = useState(false);
 
   // Refs for each section
   const homeRef = useRef(null);
@@ -17,8 +18,7 @@ function App() {
   useEffect(() => {
     const sections = [
       { name: 'home', ref: homeRef },
-      { name: 'about', ref: aboutRef },
-      { name: 'contact', ref: contactRef }
+      { name: 'about', ref: aboutRef }
     ];
 
     const handleScroll = () => {
@@ -35,24 +35,17 @@ function App() {
           current = name;
           break;
         }
-        // if we're past the last section
         if (i === sections.length - 1 && scrollPos >= top) {
           current = name;
         }
       }
 
-      // If scrolled to bottom, highlight contact
-      if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 2) {
-        current = 'contact';
-      }
-
       setCurrentSection(current);
-      console.log('Current section:', current); // Add this line
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('resize', handleScroll);
-    handleScroll(); // set initial state
+    handleScroll();
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
@@ -114,21 +107,31 @@ function App() {
                 className={`nav-link fw-bold${currentSection === 'home' ? ' text-danger' : ''}`}
                 href="#home"
                 onClick={e => { e.preventDefault(); scrollToSection(homeRef, 'home'); }}
-              >Home</a>
+              >
+                Home
+              </a>
             </li>
             <li className="nav-item mx-2">
               <a
                 className={`nav-link fw-bold${currentSection === 'about' ? ' text-danger' : ''}`}
                 href="#about"
                 onClick={e => { e.preventDefault(); scrollToSection(aboutRef, 'about'); }}
-              >About</a>
+              >
+                About
+              </a>
             </li>
             <li className="nav-item mx-2">
               <a
-                className={`nav-link fw-bold${currentSection === 'contact' ? ' text-danger' : ''}`}
+                className="fw-bold btn btn-danger px-3 py-1 ms-2 rounded-pill text-white"
+                style={{ fontWeight: 700, letterSpacing: 1 }}
                 href="#contact"
-                onClick={e => { e.preventDefault(); scrollToSection(contactRef, 'contact'); }}
-              >Contact Us</a>
+                onClick={e => {
+                  e.preventDefault();
+                  setShowContactPopup(true);
+                }}
+              >
+                Contact Us
+              </a>
             </li>
           </ul>
         </div>
@@ -262,7 +265,7 @@ function App() {
             <div className="text-center text-lg-start mb-4">
               <button
                 className="btn btn-outline-danger btn-lg rounded-pill px-4 fw-bold shadow-sm"
-                onClick={() => scrollToSection(contactRef, 'contact')}
+                onClick={() => setShowContactPopup(true)}
               >
                 CONTACT US
               </button>
@@ -285,7 +288,7 @@ function App() {
         </div>
       </section>
       {/* Contact Section */}
-      <section ref={contactRef} id="contact" className="container py-5">
+      {/* <section ref={contactRef} id="contact" className="container py-5">
         <div className="row justify-content-center">
           <div className="col-lg-6 section-about-inner p-5">
             <h2 className="fw-bold text-danger mb-4 text-center">Contact Us</h2>
@@ -338,7 +341,7 @@ function App() {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
       {/* Auth Modal */}
       {showAuth && (
         <div
@@ -350,6 +353,71 @@ function App() {
             className="auth-modal-box shadow-lg"
           >
             <Auth defaultRegister={showAuth === "register"} />
+          </div>
+        </div>
+      )}
+
+      {/* Floating Contact Button */}
+      <button
+        className="contact-fab"
+        onClick={() => setShowContactPopup(true)}
+        title="Contact Us"
+      >
+        <img src="https://img.icons8.com/ios-filled/40/fa314a/chat.png" alt="Contact" />
+      </button>
+
+      {/* Contact Popup */}
+      {showContactPopup && (
+        <div className="contact-popup-backdrop" onClick={() => setShowContactPopup(false)}>
+          <div className="contact-popup" onClick={e => e.stopPropagation()}>
+            <h2 className="fw-bold text-danger mb-4 text-center">Contact Us</h2>
+            <div className="section-contact-inner">
+              <div className="mb-3">
+                <label className="form-label fw-bold">Name</label>
+                <input
+                  type="text"
+                  className="form-control section-contact-input"
+                  name="name"
+                  value={contact.name}
+                  onChange={handleContactChange}
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <label className="form-label fw-bold">Email</label>
+                <input
+                  type="email"
+                  className="form-control section-contact-input"
+                  name="email"
+                  value={contact.email}
+                  onChange={handleContactChange}
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <label className="form-label fw-bold">Message</label>
+                <textarea
+                  className="form-control section-contact-input"
+                  name="message"
+                  rows={4}
+                  value={contact.message}
+                  onChange={handleContactChange}
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="btn btn-danger px-4 fw-bold w-100 section-contact-btn"
+                onClick={handleContactSubmit}
+              >
+                Send
+              </button>
+              {contactSent && (
+                <div className="alert alert-success mt-3 py-2 text-center" role="alert">
+                  Thank you for contacting us! We will get back to you soon.
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

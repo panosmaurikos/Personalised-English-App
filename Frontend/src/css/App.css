@@ -220,3 +220,53 @@ section {
   color: #888;
   margin-top: 0.5rem;
 }
+
+/* Floating Action Button */
+.contact-fab {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  width: 60px;
+  height: 60px;
+  background: #fff;
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 4px 16px rgba(220,53,69,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+.contact-fab:hover {
+  box-shadow: 0 8px 24px rgba(220,53,69,0.25);
+  background: #ffeaea;
+}
+
+/* Popup Backdrop */
+.contact-popup-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.25);
+  z-index: 2100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+/* Popup Box */
+.contact-popup {
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  padding: 32px 24px 24px 24px;
+  width: 100%;
+  max-width: 370px;
+  margin: 0 32px 32px 0;
+  animation: popupIn 0.2s;
+}
+@keyframes popupIn {
+  from { transform: translateY(100px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
