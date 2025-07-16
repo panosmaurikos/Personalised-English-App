@@ -1,0 +1,84 @@
+.register-bg {
+  min-height: 500px;
+  background: none;
+  border-radius: 20px;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.register-form {
+  width: 100%;
+  max-width: 400px;
+  background: linear-gradient(135deg, #f0f4ff, #e0e7ff);
+  border-radius: 20px;
+  padding: 32px 28px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+}
+
+.register-title {
+  color: #3b82f6;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  font-size: 2rem;
+  letter-spacing: 1px;
+}
+
+.register-input,
+.register-select {
+  border-radius: 15px;
+  border: none;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(102,126,234,0.07);
+  padding: 16px;
+  margin-bottom: 16px;
+  font-size: 1rem;
+  transition: box-shadow 0.3s, border-color 0.3s;
+}
+
+.register-input:focus,
+.register-select:focus {
+  box-shadow: 0 0 0 2px #667eea;
+}
+
+.register-btn {
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 15px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  padding: 12px;
+  transition: transform 0.3s, box-shadow 0.3s;
+  color: #fff;
+}
+
+.register-btn:hover {
+  transform: scale(1.05);
+  color: #fff;
+}
+
+.register-login-btn {
+  text-decoration: none;
+  padding: 8px 20px;
+  border-radius: 15px;
+  background: linear-gradient(90deg, #a6c1ee 0%, #fbc2eb 100%);
+  color: #282c34;
+  font-weight: 500;
+  border: none;
+  transition: background 0.3s, transform 0.3s;
+  cursor: pointer;
+}
+
+.register-login-btn:hover {
+  background: linear-gradient(90deg, #fbc2eb 0%, #a6c1ee 100%);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
