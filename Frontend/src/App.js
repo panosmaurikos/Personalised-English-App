@@ -264,20 +264,6 @@ function App() {
             </p>
           </div>
         </div>
-        {/* Testimonials at the end of About */}
-        <div className="mt-5">
-          <h4 className="fw-bold text-danger mb-3 text-center">What Our Learners Say</h4>
-          <div className="about-testimonials">
-            <blockquote>
-              <p>"LinguaLearn helped me pass my English exam with confidence!"</p>
-              <footer>- Maria, Student</footer>
-            </blockquote>
-            <blockquote>
-              <p>"The personalized lessons and analytics are game changers."</p>
-              <footer>- Ahmed, Professional</footer>
-            </blockquote>
-          </div>
-        </div>
       </section>
       {/* Contact Section */}
       {/* <section ref={contactRef} id="contact" className="container py-5">
