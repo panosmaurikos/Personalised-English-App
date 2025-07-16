@@ -33,12 +33,14 @@ const Login = ({ onToggle }) => (
                 />
             </div>
             <div className="mb-4 text-end">
-                <a
-                    href="#"
-                    className="login-link small"
+                <button
+                    type="button"
+                    className="login-link small btn btn-link p-0"
+                    style={{ textDecoration: 'underline', color: '#0d6efd' }}
+                    onClick={() => alert('Forgot Password functionality coming soon!')}
                 >
                     Forgot Password?
-                </a>
+                </button>
             </div>
             <button
                 type="submit"
