@@ -5,7 +5,6 @@ import React, { useState, useEffect, useRef } from 'react';
 
 function App() {
   const [showAuth, setShowAuth] = useState(false);
-  const [showContactPopup, setShowContactPopup] = useState(false);
 
   // Refs for each section
   const homeRef = useRef(null);
@@ -351,71 +350,6 @@ function App() {
             className="auth-modal-box shadow-lg"
           >
             <Auth defaultRegister={showAuth === "register"} />
-          </div>
-        </div>
-      )}
-
-      {/* Floating Contact Button */}
-      <button
-        className="contact-fab"
-        onClick={() => setShowContactPopup(true)}
-        title="Contact Us"
-      >
-        <img src="https://img.icons8.com/ios-filled/40/fa314a/chat.png" alt="Contact" />
-      </button>
-
-      {/* Contact Popup */}
-      {showContactPopup && (
-        <div className="contact-popup-backdrop" onClick={() => setShowContactPopup(false)}>
-          <div className="contact-popup" onClick={e => e.stopPropagation()}>
-            <h2 className="fw-bold text-danger mb-4 text-center">Contact Us</h2>
-            <div className="section-contact-inner">
-              <div className="mb-3">
-                <label className="form-label fw-bold">Name</label>
-                <input
-                  type="text"
-                  className="form-control section-contact-input"
-                  name="name"
-                  value={contact.name}
-                  onChange={handleContactChange}
-                  required
-                />
-              </div>
-              <div className="mb-3">
-                <label className="form-label fw-bold">Email</label>
-                <input
-                  type="email"
-                  className="form-control section-contact-input"
-                  name="email"
-                  value={contact.email}
-                  onChange={handleContactChange}
-                  required
-                />
-              </div>
-              <div className="mb-3">
-                <label className="form-label fw-bold">Message</label>
-                <textarea
-                  className="form-control section-contact-input"
-                  name="message"
-                  rows={4}
-                  value={contact.message}
-                  onChange={handleContactChange}
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="btn btn-danger px-4 fw-bold w-100 section-contact-btn"
-                onClick={handleContactSubmit}
-              >
-                Send
-              </button>
-              {contactSent && (
-                <div className="alert alert-success mt-3 py-2 text-center" role="alert">
-                  Thank you for contacting us! We will get back to you soon.
-                </div>
-              )}
-            </div>
           </div>
         </div>
       )}
