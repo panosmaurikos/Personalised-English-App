@@ -10,7 +10,7 @@ function App() {
   // Refs for each section
   const homeRef = useRef(null);
   const aboutRef = useRef(null);
-  const contactRef = useRef(null);
+  //const contactRef = useRef(null);
 
   // Track current section for nav highlight
   const [currentSection, setCurrentSection] = useState('home');
@@ -262,14 +262,6 @@ function App() {
             <p className="text-secondary mb-4">
               Whether you’re preparing for exams, improving your professional communication, or simply aiming for fluency, LinguaLearn is here to support your journey every step of the way.
             </p>
-            <div className="text-center text-lg-start mb-4">
-              <button
-                className="btn btn-outline-danger btn-lg rounded-pill px-4 fw-bold shadow-sm"
-                onClick={() => setShowContactPopup(true)}
-              >
-                CONTACT US
-              </button>
-            </div>
           </div>
         </div>
         {/* Testimonials at the end of About */}
