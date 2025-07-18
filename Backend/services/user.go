@@ -63,3 +63,18 @@ func (s *UserService) Register(ctx context.Context, req *models.RegisterRequest)
 	user.Password = ""
 	return user, nil
 }
+
+func (s *UserService) Authenticate(ctx context.Context, username, password string) (bool, error) {
+	user, err := s.repo.GetUserByUsername(ctx, username)
+	if err != nil {
+		return false, err
+	}
+	if user == nil {
+		return false, errors.New("user not found")
+	}
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if err != nil {
+		return false, errors.New("invalid credentials")
+	}
+	return true, nil
+}

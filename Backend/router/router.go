@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
 type Handler struct {
@@ -15,17 +16,19 @@ func NewHandler() *Handler {
 	return &Handler{}
 }
 
-func (h *Handler) RegisterRoutes(router *mux.Router) {
-	// Define your routes here
-	router.HandleFunc("/register", h.RegisterHandler).Methods("POST")
-	router.HandleFunc("/login", h.LoginHandler).Methods("POST")
-}
-
-func (h *Handler) SetupRouter(registerHandler http.Handler) http.Handler {
+func (h *Handler) SetupRouter(registerHandler http.Handler, loginHandler http.Handler) http.Handler {
 	r := mux.NewRouter()
-	r.Handle("/register", registerHandler)
-	h.RegisterRoutes(r)
-	return r
+	r.Handle("/register", registerHandler).Methods("POST")
+	r.Handle("/login", loginHandler).Methods("POST")
+
+	// Add CORS middleware
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type"},
+		AllowCredentials: true, // Set to true if withCredentials is used in the frontend
+	})
+	return c.Handler(r)
 }
 
 func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {

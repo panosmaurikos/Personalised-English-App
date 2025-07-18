@@ -4,7 +4,7 @@ import Register from './Register';
 
 const Auth = ({ defaultRegister }) => {
   // If defaultRegister is true, show Register by default, else Login
-  const [showLogin, setShowLogin] = useState(!defaultRegister);
+  const [showLogin, setShowLogin] = useState(defaultRegister);
 
   return (
     <div>

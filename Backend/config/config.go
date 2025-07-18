@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -14,8 +15,11 @@ import (
 )
 
 func Init() {
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using environment variables")
+	// Always try to load .env from the project root
+	if err := godotenv.Load(filepath.Join("C:/Users/Panos/Desktop/Personalised-English-App", ".env")); err != nil {
+		log.Printf("No .env file found at project root: %v", err)
+	} else {
+		log.Println("Loaded .env file from project root")
 	}
 }
 

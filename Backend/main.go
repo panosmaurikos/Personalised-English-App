@@ -31,14 +31,15 @@ func main() {
 	userRepo := repositories.NewUserRepository(db)
 	userSvc := services.NewUserService(userRepo)
 	registerHandler := api.NewRegisterHandler(userSvc)
+	loginHandler := api.NewLoginHandler(userSvc)
 
 	// 4. Router setup
 	h := router.NewHandler()
-	router := h.SetupRouter(registerHandler)
+	r := h.SetupRouter(registerHandler, loginHandler)
 
 	// 5. CORS middleware
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"}, // Προσαρμόστε ανάλογα με τις ανάγκες σας
+		AllowedOrigins:   []string{"http://localhost:3000"},
 		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
@@ -47,13 +48,13 @@ func main() {
 	// 6. Server setup
 	srv := &http.Server{
 		Addr:         ":" + os.Getenv("SERVER_PORT"),
-		Handler:      c.Handler(router),
+		Handler:      c.Handler(r), // CORS wraps the router
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
 
-	// 5. Graceful shutdown
+	// 7. Graceful shutdown
 	go func() {
 		log.Printf("Server starting on %s\n", srv.Addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
