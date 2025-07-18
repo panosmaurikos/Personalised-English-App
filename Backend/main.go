@@ -38,7 +38,7 @@ func main() {
 
 	// 5. CORS middleware
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"},
+		AllowedOrigins:   []string{"*"}, // Προσαρμόστε ανάλογα με τις ανάγκες σας
 		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
