@@ -1,3 +1,4 @@
+// DB connection and configuration
 package config
 
 import (

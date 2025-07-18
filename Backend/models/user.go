@@ -1,3 +1,4 @@
+// Define the User model
 package models
 
 import "time"

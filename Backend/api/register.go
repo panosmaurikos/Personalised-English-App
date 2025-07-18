@@ -1,3 +1,4 @@
+// Http handlers
 package api
 
 import (

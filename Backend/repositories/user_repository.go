@@ -1,3 +1,4 @@
+// Contains the logic for the interaction with the database
 package repositories
 
 import (
@@ -15,7 +16,6 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
-// CreateUser εισάγει νέο χρήστη με παραμετρική query
 func (r *UserRepository) CreateUser(ctx context.Context, u *models.User) error {
 	query := `
         INSERT INTO users (username, email, password, role)

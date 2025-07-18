@@ -13,6 +13,7 @@ import (
 	"github.com/panosmaurikos/personalisedenglish/backend/repositories"
 	"github.com/panosmaurikos/personalisedenglish/backend/router"
 	"github.com/panosmaurikos/personalisedenglish/backend/services"
+	"github.com/rs/cors"
 )
 
 func main() {
@@ -31,12 +32,22 @@ func main() {
 	userSvc := services.NewUserService(userRepo)
 	registerHandler := api.NewRegisterHandler(userSvc)
 
-	// 4. Router με CORS
-	handler := router.NewRouter(registerHandler)
+	// 4. Router setup
+	h := router.NewHandler()
+	router := h.SetupRouter(registerHandler)
 
+	// 5. CORS middleware
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
+	})
+
+	// 6. Server setup
 	srv := &http.Server{
 		Addr:         ":" + os.Getenv("SERVER_PORT"),
-		Handler:      handler,
+		Handler:      c.Handler(router),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
