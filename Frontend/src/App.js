@@ -1,83 +1,112 @@
-import './css/App.css';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import AuthModal from './components/AuthModal';
-import React, { useState, useRef } from 'react';
-import HomeSection from './components/HomeSection';
-import AboutSection from './components/AboutSection';
-import Navbar from './components/Navbar';
-import ContactPopup from './components/ContactPopup';
-import ContactFab from './components/ContactFab';
-import useSectionHighlight from './hooks/useSectionHighlight';
+import "./css/App.css";
+import AuthModal from "./components/AuthModal";
+import { useRef } from "react";
+import HomeSection from "./components/HomeSection";
+import AboutSection from "./components/AboutSection";
+import Navbar from "./components/Navbar";
+import ContactPopup from "./components/ContactPopup";
+import ContactFab from "./components/ContactFab";
+import useSectionHighlight from "./hooks/useSectionHighlight";
+import useAuth from "./hooks/useAuth";
+import useContact from "./hooks/useContact";
+import useToast from "./hooks/useToast";
+import ToastMessage from "./components/ToastMessage";
 
 function App() {
-  const [showAuth, setShowAuth] = useState(false);
-  const [showContactPopup, setShowContactPopup] = useState(false);
+  // The custom toast hook provides state and methods to display toast notifications
+  const { toast, setToast, handleToast } = useToast();
 
-  // Refs for each section
+  // Use the custom auth hook to manage authentication logic
+  const {
+    showAuth,
+    authMode,
+    user,
+    isAuthenticated,
+    openAuth,
+    closeAuth,
+    toggleAuthMode,
+    login,
+    register,
+    logout,
+  } = useAuth(handleToast);
+
+  // Use the custom contact hook to manage contact form logic
+  const {
+    showContactPopup,
+    contact,
+    contactSent,
+    openContactPopup,
+    closeContactPopup,
+    handleContactChange,
+    handleContactSubmit,
+  } = useContact(handleToast);
+
+  // Refs for each section to enable smooth scrolling
   const homeRef = useRef(null);
   const aboutRef = useRef(null);
 
+  // Highlight the current section in view
   const currentSection = useSectionHighlight([
-    { name: 'home', ref: homeRef },
-    { name: 'about', ref: aboutRef }
+    { name: "home", ref: homeRef },
+    { name: "about", ref: aboutRef },
   ]);
 
-  // Contact form state
-  const [contact, setContact] = useState({ name: '', email: '', message: '' });
-  const [contactSent, setContactSent] = useState(false);
-
-  const handleContactChange = e => {
-    setContact({ ...contact, [e.target.name]: e.target.value });
-  };
-
-  const handleContactSubmit = e => {
-    e.preventDefault();
-    setContactSent(true);
-    setContact({ name: '', email: '', message: '' });
-    setTimeout(() => setContactSent(false), 3000);
-  };
-
-  // Scroll to section and set current section
-  const scrollToSection = (ref, sectionName) => {
-    ref.current?.scrollIntoView({ behavior: 'smooth' });
+  // Function to scroll smoothly to a specific section
+  const scrollToSection = (ref) => {
+    ref.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
     <div className="position-relative">
-      {/* Header */}
+      {/* Navbar for navigation and user actions */}
       <Navbar
         currentSection={currentSection}
         scrollToSection={scrollToSection}
         homeRef={homeRef}
         aboutRef={aboutRef}
-        setShowContactPopup={setShowContactPopup}
-        setShowAuth={setShowAuth}
+        openContactPopup={openContactPopup}
+        openAuth={openAuth}
+        isAuthenticated={isAuthenticated}
+        user={user}
+        logout={logout}
       />
+
       {/* Home Section */}
       <HomeSection
         homeRef={homeRef}
         scrollToSection={scrollToSection}
         aboutRef={aboutRef}
-        setShowAuth={setShowAuth}
+        openAuth={openAuth}
       />
+
       {/* About Section */}
       <AboutSection aboutRef={aboutRef} />
 
-      {/* Auth Modal */}
-      <AuthModal showAuth={showAuth} setShowAuth={setShowAuth} />
+      {/* Authentication Modal */}
+      <AuthModal
+        showAuth={showAuth}
+        closeAuth={closeAuth}
+        authMode={authMode}
+        toggleAuthMode={toggleAuthMode}
+        login={login}
+        register={register}
+      />
 
       {/* Floating Contact Button */}
-      <ContactFab onClick={() => setShowContactPopup(true)} />
-        
+      <ContactFab onClick={openContactPopup} />
+
       {/* Contact Popup */}
       <ContactPopup
         showContactPopup={showContactPopup}
-        setShowContactPopup={setShowContactPopup}
+        setShowContactPopup={closeContactPopup}
         contact={contact}
         handleContactChange={handleContactChange}
         handleContactSubmit={handleContactSubmit}
         contactSent={contactSent}
       />
+
+      {/* Toast Notification */}
+      <ToastMessage toast={toast} setToast={setToast} />
     </div>
   );
 }

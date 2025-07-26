@@ -1,22 +1,23 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import { useState } from 'react';
 import '../../css/Login.css';
 
-const Login = ({ onToggle }) => {
+const Login = ({ onToggle, login }) => {
+  // State to manage the login form inputs
   const [form, setForm] = useState({
     username: '',
     password: '',
   });
 
+  // Handle input changes and update the form state
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevent default form submission behavior
 
-    // Client-side validation
+    // Client-side validation for username and password
     if (!form.username) {
       alert('Username or Email is required');
       return;
@@ -26,29 +27,21 @@ const Login = ({ onToggle }) => {
       return;
     }
 
-    try {
-      const res = await axios.post(`${process.env.REACT_APP_API_URL}/login`, form, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        withCredentials: true, // Keep if using cookies/sessions
-      });
+    // Call the login function passed as a prop
+    const result = await login(form);
 
-      alert(res.data.message || 'Login successful!');
-      // Optionally redirect or update app state after login
-      onToggle(); // Or implement a redirect to a dashboard
-    } catch (error) {
-      if (error.response) {
-        alert(`Error: ${error.response.data.message || error.response.data}`);
-      } else {
-        alert('Failed to connect to server.');
-      }
+    if (result.success) {
+      alert('Login successful!');
+      // The hook will automatically close the modal and set authentication state
+    } else {
+      alert(`Error: ${result.error || 'Login failed'}`);
     }
   };
 
   return (
     <div className="login-bg">
       <form className="text-center w-100" onSubmit={handleSubmit}>
+        {/* Logo and title */}
         <img
           src="/book.png"
           alt="Education"
@@ -60,28 +53,32 @@ const Login = ({ onToggle }) => {
         <p className="text-muted small mb-4">
           Log in to start your English learning adventure!
         </p>
+
+        {/* Username input field */}
         <div className="mb-4">
           <input
             type="text"
             name="username"
             className="form-control form-control-lg shadow-sm login-input"
             placeholder="Username or Email"
-            required
             value={form.username}
             onChange={handleChange}
           />
         </div>
+
+        {/* Password input field */}
         <div className="mb-4">
           <input
             type="password"
             name="password"
             className="form-control form-control-lg shadow-sm login-input"
             placeholder="Password"
-            required
             value={form.password}
             onChange={handleChange}
           />
         </div>
+
+        {/* Forgot Password link */}
         <div className="mb-4 text-end">
           <button
             type="button"
@@ -92,12 +89,16 @@ const Login = ({ onToggle }) => {
             Forgot Password?
           </button>
         </div>
+
+        {/* Submit button */}
         <button
           type="submit"
           className="btn btn-primary btn-lg w-100 shadow-sm login-btn"
         >
           Log In
         </button>
+
+        {/* Sign-up link */}
         <div className="mt-4 text-center">
           <span className="text-muted small">
             New to our platform?{' '}

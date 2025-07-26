@@ -1,0 +1,47 @@
+/* Toast container custom position and z-index */
+.toastContainer {
+  z-index: 3000;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Toast styling */
+.toast {
+  border-radius: 12px !important;
+  min-width: 220px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  font-family: 'Arial', sans-serif;
+  font-size: 1rem;
+  font-weight: bold;
+  text-align: center;
+  padding: 10px;
+  opacity: 0.95;
+}
+
+/* Toast body styling */
+.toastBody {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Animation for toast */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}

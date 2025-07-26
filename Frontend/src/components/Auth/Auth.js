@@ -1,17 +1,22 @@
-import React, { useState } from 'react';
 import Login from './Login';
 import Register from './Register';
 
-const Auth = ({ defaultRegister }) => {
-  // If defaultRegister is true, show Register by default, else Login
-  const [showLogin, setShowLogin] = useState(defaultRegister);
-
+const Auth = ({ authMode, toggleAuthMode, login, register }) => {
   return (
     <div>
-      {showLogin ? (
-        <Login onToggle={() => setShowLogin(false)} />
+      {/* Conditionally render the Login or Register component based on the authMode prop */}
+      {authMode === 'login' ? (
+        // Render the Login component if authMode is 'login'
+        <Login 
+          onToggle={toggleAuthMode} // Function to switch to the Register mode
+          login={login} // Function to handle user login
+        />
       ) : (
-        <Register onToggle={() => setShowLogin(true)} />
+        // Render the Register component if authMode is 'register'
+        <Register 
+          onToggle={toggleAuthMode} // Function to switch to the Login mode
+          register={register} // Function to handle user registration
+        />
       )}
     </div>
   );

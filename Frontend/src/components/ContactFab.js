@@ -1,13 +1,16 @@
-import React from 'react';
-
 function ContactFab({ onClick }) {
   return (
     <button
+      // Floating action button for contacting support
       className="contact-fab"
-      onClick={onClick}
-      title="Contact Us"
+      onClick={onClick} // Trigger the provided onClick function when clicked
+      title="Contact Us" // Tooltip text for the button
     >
-      <img src="https://img.icons8.com/ios-filled/40/fa314a/chat.png" alt="Contact" />
+      <img 
+        // Icon for the contact button
+        src="https://img.icons8.com/ios-filled/40/fa314a/chat.png" 
+        alt="Contact" // Alternative text for the image
+      />
     </button>
   );
 }
