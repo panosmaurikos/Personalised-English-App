@@ -45,16 +45,27 @@ func (h *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	authenticated, err := h.UserService.Authenticate(r.Context(), creds.Username, creds.Password)
-	if err != nil || !authenticated {
-		//log.Printf("Authentication failed: %v", err)
+	// Authenticate user and get user object
+	user, err := h.UserService.Authenticate(r.Context(), creds.Username, creds.Password)
+	if err != nil || user == nil {
 		respondWithError(w, http.StatusUnauthorized, "Invalid credentials")
+		return
+	}
+
+	// Generate JWT token
+	token, err := GenerateJWT(user.ID, user.Username)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Could not generate token")
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "User logged in successfully"})
+	json.NewEncoder(w).Encode(map[string]any{
+		"message":  "User logged in successfully",
+		"token":    token,
+		"username": user.Username,
+	})
 }
 
 func respondWithError(w http.ResponseWriter, status int, message string) {

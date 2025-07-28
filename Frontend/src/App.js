@@ -77,6 +77,7 @@ function App() {
         scrollToSection={scrollToSection}
         aboutRef={aboutRef}
         openAuth={openAuth}
+        isAuthenticated={isAuthenticated}
       />
 
       {/* About Section */}
@@ -90,6 +91,7 @@ function App() {
         toggleAuthMode={toggleAuthMode}
         login={login}
         register={register}
+        handleToast={handleToast}
       />
 
       {/* Floating Contact Button */}

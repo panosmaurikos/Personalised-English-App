@@ -16,10 +16,12 @@ func NewHandler() *Handler {
 	return &Handler{}
 }
 
-func (h *Handler) SetupRouter(registerHandler http.Handler, loginHandler http.Handler) http.Handler {
+func (h *Handler) SetupRouter(registerHandler http.Handler, loginHandler http.Handler, forgotPasswordHandler http.Handler, resetPasswordOTPHandler http.Handler) http.Handler {
 	r := mux.NewRouter()
 	r.Handle("/register", registerHandler).Methods("POST")
 	r.Handle("/login", loginHandler).Methods("POST")
+	r.Handle("/forgot-password", forgotPasswordHandler).Methods("POST")
+	r.Handle("/reset-password", resetPasswordOTPHandler).Methods("POST")
 
 	// Add CORS middleware
 	c := cors.New(cors.Options{
@@ -39,4 +41,14 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("User logged in successfully"))
+}
+
+func (h *Handler) ForgotPasswordHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Password reset link sent"))
+}
+
+func (h *Handler) ResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Password has been reset successfully"))
 }

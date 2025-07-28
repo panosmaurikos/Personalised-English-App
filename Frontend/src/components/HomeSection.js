@@ -1,6 +1,6 @@
-function HomeSection({ homeRef, scrollToSection, aboutRef, openAuth }) {
+function HomeSection({ homeRef, scrollToSection, aboutRef, openAuth, isAuthenticated }) {
   return (
-    <section 
+    <section
       ref={homeRef} // Reference for the home section, used for scrolling or highlighting
       id="home" // Unique identifier for the section
       className="container py-5" // Styling for the section
@@ -21,12 +21,14 @@ function HomeSection({ homeRef, scrollToSection, aboutRef, openAuth }) {
 
           {/* Action buttons */}
           <div className="d-flex gap-3 mb-4">
-            <button
-              className="btn btn-danger btn-lg rounded-pill px-4 fw-bold shadow-sm"
-              onClick={() => openAuth("register")} // Opens the registration modal
-            >
-              TRY NOW
-            </button>
+            {!isAuthenticated && (
+              <button
+                className="btn btn-danger btn-lg rounded-pill px-4 fw-bold shadow-sm"
+                onClick={() => openAuth("register")} // Opens the registration modal
+              >
+                TRY NOW
+              </button>
+            )}
             <button
               className="btn btn-outline-danger btn-lg rounded-pill px-4 fw-bold shadow-sm"
               onClick={() => scrollToSection(aboutRef)} // Scrolls to the About section

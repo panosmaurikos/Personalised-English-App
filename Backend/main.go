@@ -32,10 +32,12 @@ func main() {
 	userSvc := services.NewUserService(userRepo)
 	registerHandler := api.NewRegisterHandler(userSvc)
 	loginHandler := api.NewLoginHandler(userSvc)
+	forgotPasswordHandler := api.NewForgotPasswordHandler(userSvc)
+	resetPasswordOTPHandler := api.NewResetPasswordOTPHandler(userSvc)
 
 	// 4. Router setup
 	h := router.NewHandler()
-	r := h.SetupRouter(registerHandler, loginHandler)
+	r := h.SetupRouter(registerHandler, loginHandler, forgotPasswordHandler, resetPasswordOTPHandler)
 
 	// 5. CORS middleware
 	c := cors.New(cors.Options{

@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { jwtDecode } from "jwt-decode";
 
 const useAuth = (handleToast) => {
   // State to control the visibility of the authentication modal
@@ -13,6 +14,21 @@ const useAuth = (handleToast) => {
 
   // State to indicate whether the user is authenticated
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Check for a valid JWT token in localStorage on initial load
+  useEffect(() => {
+    const token = localStorage.getItem('jwt');
+    if (token) {
+      setIsAuthenticated(true);
+      try {
+        const decoded = jwtDecode(token);
+        // If your JWT payload contains username
+        setUser({ username: decoded.username });
+      } catch {
+        setUser(null);
+      }
+    }
+  }, []);
 
   // Function to open the authentication modal with a specific mode
   const openAuth = (mode = 'login') => {
@@ -43,6 +59,11 @@ const useAuth = (handleToast) => {
 
       if (response.status === 200) {
         const userData = response.data; // Extract user data from the response
+
+        console.log('Login successful:', userData);
+        if (userData.token) {
+          localStorage.setItem('jwt', userData.token);
+        }
         setUser(userData); // Set the user data
         setIsAuthenticated(true); // Mark the user as authenticated
         closeAuth(); // Close the authentication modal
@@ -76,6 +97,12 @@ const useAuth = (handleToast) => {
 
       if (response.status === 200 || response.status === 201) {
         const newUser = response.data; // Extract new user data from the response
+        console.log('Registration successful:', newUser);
+
+        if (newUser.token) {
+          localStorage.setItem('jwt', newUser.token);
+        }
+        
         setUser(newUser); // Set the user data
         setIsAuthenticated(true); // Mark the user as authenticated
         closeAuth(); // Close the authentication modal
@@ -100,6 +127,7 @@ const useAuth = (handleToast) => {
   const logout = () => {
     setUser(null); // Clear the user data
     setIsAuthenticated(false); // Mark the user as unauthenticated
+    localStorage.removeItem('jwt');
     handleToast('Logged out successfully.', 'info'); // Show info toast
   };
 

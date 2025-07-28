@@ -2,7 +2,6 @@
 package api
 
 import (
-	// "context"
 	"encoding/json"
 	"net/http"
 
@@ -36,7 +35,17 @@ func (h *RegisterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	token, err := GenerateJWT(user.ID, user.Username)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Failed to generate token"))
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(map[string]any{
+		"token":    token,
+		"username": user.Username,
+		"email":    user.Email,
+	})
 }

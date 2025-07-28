@@ -5,6 +5,8 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -64,17 +66,49 @@ func (s *UserService) Register(ctx context.Context, req *models.RegisterRequest)
 	return user, nil
 }
 
-func (s *UserService) Authenticate(ctx context.Context, username, password string) (bool, error) {
+func (s *UserService) Authenticate(ctx context.Context, username, password string) (*models.User, error) {
 	user, err := s.repo.GetUserByUsername(ctx, username)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 	if user == nil {
-		return false, errors.New("user not found")
+		return nil, errors.New("user not found")
 	}
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
-		return false, errors.New("invalid credentials")
+		return nil, errors.New("invalid credentials")
 	}
-	return true, nil
+	return user, nil
+}
+
+func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+	return s.repo.GetUserByEmail(ctx, email)
+}
+
+func (s *UserService) CreatePasswordResetOTP(ctx context.Context, email string) (string, error) {
+	user, err := s.repo.GetUserByEmail(ctx, email)
+	if err != nil || user == nil {
+		return "", errors.New("user not found")
+	}
+	otp := fmt.Sprintf("%06d", rand.Intn(1000000)) // 6-digit code
+	expiresAt := time.Now().Add(10 * time.Minute)
+	if err := s.repo.CreatePasswordResetOTP(ctx, user.ID, otp, expiresAt); err != nil {
+		return "", err
+	}
+	return otp, nil
+}
+
+func (s *UserService) ResetPasswordWithOTP(ctx context.Context, otp, newPassword string) error {
+	userID, err := s.repo.GetUserIDByOTP(ctx, otp)
+	if err != nil || userID == 0 {
+		return errors.New("invalid or expired code")
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	if err := s.repo.UpdateUserPassword(ctx, userID, string(hash)); err != nil {
+		return err
+	}
+	return s.repo.DeletePasswordResetOTP(ctx, otp)
 }

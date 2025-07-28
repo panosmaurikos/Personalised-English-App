@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import '../../css/Register.css';
 
-const Register = ({ onToggle, register }) => {
+const Register = ({ onToggle, register, handleToast }) => {
   // State to manage the registration form inputs
   const [form, setForm] = useState({
     username: '',
@@ -9,10 +9,12 @@ const Register = ({ onToggle, register }) => {
     password: '',
     role: '',
   });
+  const [error, setError] = useState(''); // new state for error
 
   // Handle input changes and update the form state
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    setError(''); // clear error when changing input
   };
 
   // Handle form submission
@@ -21,36 +23,42 @@ const Register = ({ onToggle, register }) => {
 
     // Client-side validation for username, email, password, and role
     if (!form.username) {
-      alert('Username is required');
+      showError('Username is required');
       return;
     }
     if (!form.email) {
-      alert('Email is required');
+      showError('Email is required');
       return;
     }
     if (!form.password) {
-      alert('Password is required');
+      showError('Password is required');
       return;
     }
     if (!form.role) {
-      alert('Role is required');
+      showError('Role is required');
       return;
     }
 
     // Call the register function passed as a prop
-    const result = await register(form);
-
-    if (result.success) {
-      alert("Registration successful!");
-      // The hook will automatically close the modal and set authentication state
-    } else {
-      alert("Error: " + (result.error || "Registration failed"));
-    }
+    await register(form);
+    setForm({ username: '', email: '', password: '', role: '' }); // Καθαρισμός state μετά το register
   };
+
+  const showError = (msg) => {
+    setError(msg);
+    setTimeout(() => setError(''), 3500);
+  };
+
 
   return (
     <div className="register-bg">
       <form className="register-form" onSubmit={handleSubmit}>
+        {/* Error message */}
+        {error && (
+          <div className="alert alert-danger py-2 mb-3" role="alert" style={{ fontSize: '0.95rem' }}>
+            {error}
+          </div>
+        )}
         <div className="text-center mb-4">
           {/* Logo and title */}
           <img src="https://img.icons8.com/fluency/48/000000/add-user-group-man-man.png" alt="Register" className="mb-2" />
