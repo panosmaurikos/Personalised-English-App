@@ -1,0 +1,39 @@
+.navbar-test-btn {
+  font-weight: 800;
+  letter-spacing: 1px;
+  font-size: 1.1rem;
+  padding: 0.5em 2em;
+  border-radius: 2em;
+}
+
+.navbar-contact-btn {
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 0.5em 1.5em;
+  border-radius: 2em;
+}
+
+.navbar-brand {
+  font-weight: bold;
+  color: #dc3545 !important;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.navbar-brand img {
+  height: 32px;
+}
+
+.navbar .nav-link {
+  font-size: 1.05rem;
+  letter-spacing: 1px;
+}
+
+.navbar .nav-link.text-danger {
+  color: #dc3545 !important;
+}
+
+.navbar .nav-link.text-secondary {
+  color: #6c757d !important;
+}

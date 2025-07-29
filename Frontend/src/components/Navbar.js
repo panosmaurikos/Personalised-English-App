@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import '../css/Navbar.css'; // <-- Import the CSS file
 
 function Navbar({
   currentSection, // The currently active section (e.g., 'home', 'about')
@@ -12,14 +14,35 @@ function Navbar({
   logout // Function to log out the user
 }) {
   const [isCollapsed, setIsCollapsed] = useState(true); // State to manage navbar collapse
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Handler for the "Take a Test" button
+  const handleTestsClick = (e) => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      navigate('/tests');
+    } else {
+      openAuth("register");
+    }
+  };
+
+  // Handler for the logo/title click
+  const handleLogoClick = (e) => {
+    e.preventDefault();
+    navigate('/');
+  };
+
+  // Hide Home and About links on /tests page
+  const isTestsPage = location.pathname === '/tests';
 
   return (
     <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm px-4">
       {/* Brand logo and name */}
       <a
         className="navbar-brand fw-bold text-danger"
-        href="#home"
-        onClick={e => { e.preventDefault(); scrollToSection(homeRef); }} // Scroll to Home section
+        href="/"
+        onClick={handleLogoClick}
       >
         <img src="https://img.icons8.com/color/48/000000/graduation-cap.png" alt="LinguaLearn" />
         LinguaLearn
@@ -39,33 +62,45 @@ function Navbar({
 
       <div className={`collapse navbar-collapse${isCollapsed ? '' : ' show'}`} id="navbarNav">
         <ul className="navbar-nav ms-auto mb-2 mb-lg-0">
-          {/* Home link */}
-          <li className="nav-item mx-2">
-            <a
-              className={`nav-link fw-bold${currentSection === 'home' ? ' text-danger' : ''}`}
-              href="#home"
-              onClick={e => { e.preventDefault(); scrollToSection(homeRef); }} // Scroll to Home section
-            >
-              Home
-            </a>
-          </li>
+          {/* Home and About links are hidden on /tests */}
+          {!isTestsPage && (
+            <>
+              <li className="nav-item mx-2">
+                <a
+                  className={`nav-link fw-bold${currentSection === 'home' ? ' text-danger' : ''}`}
+                  href="#home"
+                  onClick={e => { e.preventDefault(); scrollToSection(homeRef); }} // Scroll to Home section
+                >
+                  Home
+                </a>
+              </li>
+              <li className="nav-item mx-2">
+                <a
+                  className={`nav-link fw-bold${currentSection === 'about' ? ' text-danger' : ''}`}
+                  href="#about"
+                  onClick={e => { e.preventDefault(); scrollToSection(aboutRef); }} // Scroll to About section
+                >
+                  About
+                </a>
+              </li>
+            </>
+          )}
 
-          {/* About link */}
+          {/* Take a Test button - always visible */}
           <li className="nav-item mx-2">
             <a
-              className={`nav-link fw-bold${currentSection === 'about' ? ' text-danger' : ''}`}
-              href="#about"
-              onClick={e => { e.preventDefault(); scrollToSection(aboutRef); }} // Scroll to About section
+              className="fw-bold btn btn-outline-success navbar-test-btn"
+              href="/tests"
+              onClick={handleTestsClick}
             >
-              About
+              Take a Test
             </a>
           </li>
 
           {/* Contact Us button */}
           <li className="nav-item mx-2">
             <a
-              className="fw-bold btn btn-danger px-3 py-1 ms-2 rounded-pill text-white"
-              style={{ fontWeight: 700, letterSpacing: 1 }}
+              className="fw-bold btn btn-danger navbar-contact-btn text-white"
               href="#contact"
               onClick={e => {
                 e.preventDefault();

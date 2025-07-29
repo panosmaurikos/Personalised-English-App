@@ -1,0 +1,215 @@
+.test-container {
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.test-card {
+  background: #fff;
+  border-radius: 1.5rem;
+  box-shadow: 0 0 24px 0 rgba(0, 0, 0, 0.08);
+  padding: 2rem;
+}
+
+.test-title {
+  font-weight: bold;
+  color: #198754;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.test-desc {
+  text-align: center;
+  color: #6c757d;
+  margin-bottom: 1.5rem;
+}
+
+.test-badge {
+  display: inline-block;
+  background: #198754;
+  color: #fff;
+  border-radius: 1rem;
+  padding: 0.4em 1em;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.test-question-block {
+  margin-bottom: 2rem;
+}
+
+.test-question {
+  font-weight: bold;
+  margin-bottom: 1.2rem;
+}
+
+.test-audio {
+  margin-bottom: 1.2rem;
+  display: block;
+}
+
+.test-options {
+  display: grid;
+  gap: 1rem;
+}
+
+.test-option-btn {
+  font-weight: 600;
+  letter-spacing: 1px;
+  font-size: 1.1rem;
+  border-radius: 2rem;
+  padding: 0.7em 1.5em;
+  border: 2px solid #0d6efd;
+  background: #fff;
+  color: #0d6efd;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.test-option-btn:hover,
+.test-option-btn:focus {
+  background: #0d6efd;
+  color: #fff;
+}
+
+.test-result {
+  text-align: center;
+}
+
+.test-level {
+  font-weight: bold;
+  color: #198754;
+  margin-bottom: 1rem;
+}
+
+.test-score {
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  color: #0d6efd;
+}
+
+.test-feedback {
+  margin-bottom: 2rem;
+  color: #333;
+}
+
+.test-retry-btn {
+  background: #198754;
+  color: #fff;
+  font-weight: bold;
+  border: none;
+  border-radius: 2rem;
+  padding: 0.7em 2em;
+  font-size: 1.1rem;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+.test-retry-btn:hover,
+.test-retry-btn:focus {
+  background: #145c32;
+}
+
+.test-header-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  justify-content: center;
+}
+
+.test-question-badge {
+  background: #f70fb1ff !important;
+  color: #fff !important;
+  border-radius: 2rem;
+  padding: 0.5rem 1.2rem;
+  font-weight: 600;
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+}
+
+.test-type-badge {
+  font-size: 1.1rem !important;
+  border-radius: 2rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  padding: 0.5rem 1.2rem;
+  min-width: 110px;
+  text-align: center;
+  box-shadow: 0 1px 4px #e9ecef;
+}
+
+.test-instruction {
+  font-weight: 700;
+  margin-bottom: 0.7rem;
+}
+
+.test-question-detail {
+  font-weight: 600;
+  font-size: 1.15rem;
+  margin-bottom: 2rem;
+}
+
+.test-audio-row {
+  margin-bottom: 1.5rem;
+}
+
+.test-audio-btn {
+  border-radius: 2rem !important;
+  font-weight: 600 !important;
+  font-size: 1.1rem !important;
+  border: none !important;
+  box-shadow: 0 2px 8px #e9ecef !important;
+  color: #0d6efd !important;
+  padding: 0.7rem 2rem !important;
+  margin-bottom: 0.5rem !important;
+  outline: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #d0e6ff !important; /* Even more visible blue */
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s !important;
+}
+
+.test-audio-btn:hover,
+.test-audio-btn:focus {
+  background: #0d6efd !important;
+  color: #fff !important;
+  box-shadow: 0 4px 16px #b3d1ff !important;
+}
+
+.test-audio-btn:hover .test-audio-icon,
+.test-audio-btn:focus .test-audio-icon {
+  color: #fff !important;
+}
+
+.test-options {
+  gap: 1rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+.test-option-btn {
+  border: 2px solid #0d6efd !important;
+  color: #0d6efd !important;
+  background: #fff !important;
+  border-radius: 2rem !important;
+  width: 100% !important;
+  max-width: 480px !important;
+  font-weight: 600 !important;
+  font-size: 1.15rem !important;
+  padding: 0.8rem 1.2rem !important;
+  transition: background 0.2s, color 0.2s, border-color 0.2s !important;
+  text-align: center !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+  letter-spacing: 1px !important;
+  cursor: pointer !important;
+}
+
+.test-option-btn:hover,
+.test-option-btn:focus {
+  background: #0d6efd !important;
+  color: #fff !important;
+  border-color: #0d6efd !important;
+}

@@ -94,7 +94,7 @@ const Login = ({ onToggle, login, handleToast }) => {
       <div className="login-bg">
         <form className="text-center w-100" onSubmit={otpSent ? handleResetSubmit : handleForgotSubmit}>
           {error && (
-            <div className="alert alert-danger py-2 mb-3" role="alert" style={{ fontSize: '0.95rem' }}>
+            <div className="alert alert-danger py-2 mb-3" role="alert">
               {error}
             </div>
           )}
@@ -168,7 +168,7 @@ const Login = ({ onToggle, login, handleToast }) => {
     <div className="login-bg">
       <form className="text-center w-100" onSubmit={handleSubmit}>
         {error && (
-          <div className="alert alert-danger py-2 mb-3" role="alert" style={{ fontSize: '0.95rem' }}>
+          <div className="alert alert-danger py-2 mb-3 login-error-alert" role="alert">
             {error}
           </div>
         )}
@@ -214,8 +214,7 @@ const Login = ({ onToggle, login, handleToast }) => {
         <div className="mb-4 text-end">
           <button
             type="button"
-            className="login-link small btn btn-link p-0"
-            style={{ textDecoration: 'underline', color: '#0d6efd' }}
+            className="login-link small btn btn-link p-0 login-forgot-btn"
             onClick={() => setShowForgot(true)}
           >
             Forgot Password?

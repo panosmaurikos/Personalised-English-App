@@ -55,7 +55,7 @@ const Register = ({ onToggle, register, handleToast }) => {
       <form className="register-form" onSubmit={handleSubmit}>
         {/* Error message */}
         {error && (
-          <div className="alert alert-danger py-2 mb-3" role="alert" style={{ fontSize: '0.95rem' }}>
+          <div className="alert alert-danger py-2 mb-3" role="alert">
             {error}
           </div>
         )}

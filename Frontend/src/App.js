@@ -11,6 +11,8 @@ import useAuth from "./hooks/useAuth";
 import useContact from "./hooks/useContact";
 import useToast from "./hooks/useToast";
 import ToastMessage from "./components/ToastMessage";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import Tests from "./pages/Tests";
 
 function App() {
   // The custom toast hook provides state and methods to display toast notifications
@@ -56,60 +58,89 @@ function App() {
     ref.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // PrivateRoute component for protecting routes
+  // This component checks if the user is authenticated.
+  // If authenticated, it renders the child components (protected page).
+  // If not authenticated, it redirects the user to the home page ("/").
+function PrivateRoute({ children }) {
+  return !isAuthenticated ? children : <Navigate to="/" replace />;
+}
+
   return (
-    <div className="position-relative">
-      {/* Navbar for navigation and user actions */}
-      <Navbar
-        currentSection={currentSection}
-        scrollToSection={scrollToSection}
-        homeRef={homeRef}
-        aboutRef={aboutRef}
-        openContactPopup={openContactPopup}
-        openAuth={openAuth}
-        isAuthenticated={isAuthenticated}
-        user={user}
-        logout={logout}
-      />
+    <Router>
+      <div className="position-relative">
+        {/* Navbar for navigation and user actions */}
+        <Navbar
+          currentSection={currentSection}
+          scrollToSection={scrollToSection}
+          homeRef={homeRef}
+          aboutRef={aboutRef}
+          openContactPopup={openContactPopup}
+          openAuth={openAuth}
+          isAuthenticated={isAuthenticated}
+          user={user}
+          logout={logout}
+        />
 
-      {/* Home Section */}
-      <HomeSection
-        homeRef={homeRef}
-        scrollToSection={scrollToSection}
-        aboutRef={aboutRef}
-        openAuth={openAuth}
-        isAuthenticated={isAuthenticated}
-      />
+        <Routes>
+          {/* Public route: Home page ("/") */}
+          <Route
+            path="/"
+            element={
+              <>
+                {/* Home Section */}
+                <HomeSection
+                  homeRef={homeRef}
+                  scrollToSection={scrollToSection}
+                  aboutRef={aboutRef}
+                  openAuth={openAuth}
+                  isAuthenticated={isAuthenticated}
+                />
 
-      {/* About Section */}
-      <AboutSection aboutRef={aboutRef} />
+                {/* About Section */}
+                <AboutSection aboutRef={aboutRef} />
+              </>
+            }
+          />
+          {/* Protected route: Tests page ("/tests") */}
+          <Route
+            path="/tests"
+            element={
+              <PrivateRoute>
+                <Tests />
+              </PrivateRoute>
+            }
+          />
+        </Routes>
 
-      {/* Authentication Modal */}
-      <AuthModal
-        showAuth={showAuth}
-        closeAuth={closeAuth}
-        authMode={authMode}
-        toggleAuthMode={toggleAuthMode}
-        login={login}
-        register={register}
-        handleToast={handleToast}
-      />
+        {/* Authentication Modal for login/register */}
+        <AuthModal
+          showAuth={showAuth}
+          closeAuth={closeAuth}
+          authMode={authMode}
+          toggleAuthMode={toggleAuthMode}
+          login={login}
+          register={register}
+          handleToast={handleToast}
+        />
 
-      {/* Floating Contact Button */}
-      <ContactFab onClick={openContactPopup} />
+        {/* Floating Contact Button */}
+        <ContactFab onClick={openContactPopup} />
 
-      {/* Contact Popup */}
-      <ContactPopup
-        showContactPopup={showContactPopup}
-        setShowContactPopup={closeContactPopup}
-        contact={contact}
-        handleContactChange={handleContactChange}
-        handleContactSubmit={handleContactSubmit}
-        contactSent={contactSent}
-      />
+        {/* Contact Popup for user messages */}
+        <ContactPopup
+          showContactPopup={showContactPopup}
+          setShowContactPopup={closeContactPopup}
+          contact={contact}
+          handleContactChange={handleContactChange}
+          handleContactSubmit={handleContactSubmit}
+          contactSent={contactSent}
+        />
 
-      {/* Toast Notification */}
-      <ToastMessage toast={toast} setToast={setToast} />
-    </div>
+        {/* Toast Notification for feedback messages */}
+        <ToastMessage toast={toast} setToast={setToast} />
+      </div>
+    </Router>
   );
 }
 

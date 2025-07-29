@@ -92,3 +92,18 @@
 .login-signup-btn:hover {
   background: linear-gradient(90deg, #fbc2eb 0%, #a6c1ee 100%);
 }
+
+.login-error-alert {
+  font-size: 0.95rem;
+}
+
+.login-forgot-btn {
+  text-decoration: underline;
+  color: #0d6efd;
+}
+
+.login-forgot-btn:hover,
+.login-forgot-btn:focus {
+  color: #0a58ca;
+  text-decoration: underline;
+}
