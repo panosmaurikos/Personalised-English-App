@@ -33,22 +33,22 @@ func (h *Handler) SetupRouter(registerHandler http.Handler, loginHandler http.Ha
 	return c.Handler(r)
 }
 
-func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("User registered successfully"))
-}
+// func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
+// 	w.WriteHeader(http.StatusOK)
+// 	w.Write([]byte("User registered successfully"))
+// }
 
-func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("User logged in successfully"))
-}
+// func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
+// 	w.WriteHeader(http.StatusOK)
+// 	w.Write([]byte("User logged in successfully"))
+// }
 
-func (h *Handler) ForgotPasswordHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Password reset link sent"))
-}
+// func (h *Handler) ForgotPasswordHandler(w http.ResponseWriter, r *http.Request) {
+// 	w.WriteHeader(http.StatusOK)
+// 	w.Write([]byte("Password reset link sent"))
+// }
 
-func (h *Handler) ResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Password has been reset successfully"))
-}
+// func (h *Handler) ResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
+// 	w.WriteHeader(http.StatusOK)
+// 	w.Write([]byte("Password has been reset successfully"))
+// }

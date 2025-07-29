@@ -100,3 +100,22 @@ func (r *UserRepository) UpdateUserPassword(ctx context.Context, userID int, has
 	_, err := r.db.ExecContext(ctx, query, hashedPassword, userID)
 	return err
 }
+
+func (r *UserRepository) GetUserByUsernameOrEmail(ctx context.Context, identifier string) (*models.User, error) {
+	query := `
+        SELECT id, username, email, password, role, create_time
+        FROM users
+        WHERE username = $1 OR email = $1
+        LIMIT 1`
+	row := r.db.QueryRowContext(ctx, query, identifier)
+
+	var user models.User
+	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.Role, &user.CreateTime)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}

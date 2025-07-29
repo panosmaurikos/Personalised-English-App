@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"math/rand"
 	"time"
 
@@ -66,18 +67,24 @@ func (s *UserService) Register(ctx context.Context, req *models.RegisterRequest)
 	return user, nil
 }
 
-func (s *UserService) Authenticate(ctx context.Context, username, password string) (*models.User, error) {
-	user, err := s.repo.GetUserByUsername(ctx, username)
+func (s *UserService) Authenticate(ctx context.Context, identifier, password string) (*models.User, error) {
+	user, err := s.repo.GetUserByUsernameOrEmail(ctx, identifier)
 	if err != nil {
+		log.Printf("Authenticate: error fetching user: %v", err)
 		return nil, err
 	}
 	if user == nil {
+		log.Printf("Authenticate: user not found: %s", identifier)
 		return nil, errors.New("user not found")
 	}
+	log.Printf("Authenticate: user found: %s", user.Username)
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
+		log.Printf("Authenticate: invalid password for user: %s", identifier)
 		return nil, errors.New("invalid credentials")
 	}
+	log.Printf("Authenticate: successful login for user: %s", user.Username)
+	user.Password = ""
 	return user, nil
 }
 
@@ -101,14 +108,18 @@ func (s *UserService) CreatePasswordResetOTP(ctx context.Context, email string) 
 func (s *UserService) ResetPasswordWithOTP(ctx context.Context, otp, newPassword string) error {
 	userID, err := s.repo.GetUserIDByOTP(ctx, otp)
 	if err != nil || userID == 0 {
+		log.Printf("ResetPasswordWithOTP: invalid or expired code: %s", otp)
 		return errors.New("invalid or expired code")
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
 	if err != nil {
+		log.Printf("ResetPasswordWithOTP: bcrypt error: %v", err)
 		return err
 	}
 	if err := s.repo.UpdateUserPassword(ctx, userID, string(hash)); err != nil {
+		log.Printf("ResetPasswordWithOTP: update password error: %v", err)
 		return err
 	}
+	log.Printf("ResetPasswordWithOTP: password updated for userID: %d", userID)
 	return s.repo.DeletePasswordResetOTP(ctx, otp)
 }

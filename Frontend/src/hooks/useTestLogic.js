@@ -154,10 +154,10 @@ function useTestLogic() {
   };
 
   const getLevel = (score) => {
-    if (score >= 10) return "Advanced (C1)";
-    if (score >= 7) return "Upper-Intermediate (B2)";
-    if (score >= 4) return "Intermediate (B1)";
-    return "Beginner (A1-A2)";
+    if (score >= 10) return "ECPE (C2)";
+    if (score >= 7) return "ECCE (B2)";
+    if (score >= 4) return "MET Digital (A2-C1)";
+    return "MET Go! Digital (A1-B2)";
   };
 
   const restartTest = () => {
