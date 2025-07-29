@@ -1,68 +1,86 @@
 package services
 
 import (
-	"bytes"
-	"encoding/json"
+	"crypto/tls"
 	"fmt"
-	"net/http"
+	"net"
+	"net/smtp"
 	"os"
+	"strings"
 )
 
-type NylasEmailRequest struct {
-	Subject string `json:"subject"`
-	To      []struct {
-		Email string `json:"email"`
-		Name  string `json:"name,omitempty"`
-	} `json:"to"`
-	From struct {
-		Email string `json:"email"`
-		Name  string `json:"name,omitempty"`
-	} `json:"from"`
-	Body string `json:"body"`
-}
-
 func SendNoReplyEmail(to, subject, body string) error {
-	apiKey := os.Getenv("NYLAS_API_KEY")
-	grantID := os.Getenv("NYLAS_GRANT_ID")
-	fromEmail := os.Getenv("NYLAS_FROM_EMAIL") // π.χ. noreply@yourdomain.com
+	from := os.Getenv("SMTP_FROM")
+	pass := os.Getenv("SMTP_PASS")
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := os.Getenv("SMTP_PORT")
 
-	if apiKey == "" || grantID == "" || fromEmail == "" {
-		return fmt.Errorf("Nylas API credentials not set")
+	if from == "" || pass == "" || smtpHost == "" || smtpPort == "" {
+		return fmt.Errorf("SMTP credentials not set")
 	}
 
-	url := fmt.Sprintf("https://api.us.nylas.com/v3/grants/%s/messages/send", grantID)
+	addr := smtpHost + ":" + smtpPort
 
-	reqBody := NylasEmailRequest{
-		Subject: subject,
-		Body:    body,
-	}
-	reqBody.To = []struct {
-		Email string `json:"email"`
-		Name  string `json:"name,omitempty"`
-	}{{Email: to}}
-	reqBody.From.Email = fromEmail
+	// Setup message
+	msg := "From: " + from + "\r\n" +
+		"To: " + to + "\r\n" +
+		"Subject: " + subject + "\r\n" +
+		"MIME-Version: 1.0\r\n" +
+		"Content-Type: text/plain; charset=\"utf-8\"\r\n" +
+		"\r\n" + body
 
-	jsonBody, err := json.Marshal(reqBody)
+	// Connect (plain) and then upgrade to TLS with STARTTLS
+	conn, err := net.Dial("tcp", addr)
 	if err != nil {
-		return err
+		return fmt.Errorf("Dial error: %w", err)
 	}
+	defer conn.Close()
 
-	httpReq, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBody))
+	client, err := smtp.NewClient(conn, smtpHost)
 	if err != nil {
-		return err
+		return fmt.Errorf("SMTP client error: %w", err)
 	}
-	httpReq.Header.Set("Authorization", "Bearer "+apiKey)
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Accept", "application/json")
+	defer client.Quit()
 
-	resp, err := http.DefaultClient.Do(httpReq)
+	// STARTTLS
+	tlsconfig := &tls.Config{
+		ServerName: smtpHost,
+	}
+	if ok, _ := client.Extension("STARTTLS"); ok {
+		if err = client.StartTLS(tlsconfig); err != nil {
+			return fmt.Errorf("STARTTLS error: %w", err)
+		}
+	}
+
+	// Auth
+	auth := smtp.PlainAuth("", from, pass, smtpHost)
+	if err = client.Auth(auth); err != nil {
+		return fmt.Errorf("SMTP auth error: %w", err)
+	}
+
+	// Set sender and recipient
+	if err = client.Mail(from); err != nil {
+		return fmt.Errorf("MAIL FROM error: %w", err)
+	}
+	for _, addr := range strings.Split(to, ",") {
+		if err = client.Rcpt(strings.TrimSpace(addr)); err != nil {
+			return fmt.Errorf("RCPT TO error: %w", err)
+		}
+	}
+
+	// Data
+	w, err := client.Data()
 	if err != nil {
-		return err
+		return fmt.Errorf("DATA error: %w", err)
 	}
-	defer resp.Body.Close()
+	_, err = w.Write([]byte(msg))
+	if err != nil {
+		return fmt.Errorf("Write error: %w", err)
+	}
+	err = w.Close()
+	if err != nil {
+		return fmt.Errorf("Close error: %w", err)
+	}
 
-	if resp.StatusCode >= 300 {
-		return fmt.Errorf("Nylas API error: %s", resp.Status)
-	}
 	return nil
 }
