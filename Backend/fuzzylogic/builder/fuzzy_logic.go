@@ -1,0 +1,103 @@
+package builder
+
+import (
+	"github.com/panosmaurikos/personalisedenglish/backend/fuzzylogic/fuzzy"
+)
+
+// FuzzyLogic groups custom connector and implication
+type FuzzyLogic struct {
+	optr   fuzzy.Operator
+	impl   fuzzy.Implication
+	agg    fuzzy.Aggregation
+	defuzz fuzzy.Defuzzification
+
+	rules []fuzzy.Rule
+}
+
+// NewFuzzyLogic creates a builder with a default configuration
+func NewFuzzyLogic(
+	optr fuzzy.Operator,
+	impl fuzzy.Implication,
+	agg fuzzy.Aggregation,
+	defuzz fuzzy.Defuzzification,
+) FuzzyLogic {
+	return FuzzyLogic{
+		optr:   optr,
+		impl:   impl,
+		agg:    agg,
+		defuzz: defuzz,
+	}
+}
+
+// If starts a rule expression
+func (fl *FuzzyLogic) If(premise fuzzy.Premise) flExpression {
+	return flExpression{
+		fl:    fl,
+		fzExp: fuzzy.NewExpression([]fuzzy.Premise{premise}, nil),
+	}
+}
+
+// Engine created using the defined rules and the default configuration
+func (fl FuzzyLogic) Engine() (fuzzy.Engine, error) {
+	return fuzzy.NewEngine(fl.rules, fl.agg, fl.defuzz)
+}
+
+// add a new rule to the builder
+func (fl *FuzzyLogic) add(rule fuzzy.Rule) {
+	fl.rules = append(fl.rules, rule)
+}
+
+// flExpression embeds a custom builder and a fuzzy flExpression
+type flExpression struct {
+	fl    *FuzzyLogic
+	fzExp fuzzy.Expression
+}
+
+// Evaluate the fuzzy expression linked
+func (exp flExpression) Evaluate(input fuzzy.DataInput) (float64, error) {
+	return exp.fzExp.Evaluate(input)
+}
+
+// connect the current expression with a new one with a connector
+func (exp flExpression) connect(premise fuzzy.Premise, cnt fuzzy.Connector) flExpression {
+	return flExpression{
+		fl:    exp.fl,
+		fzExp: exp.fzExp.Connect(premise, cnt),
+	}
+}
+
+// And connects the current expression and a premise with the AND connector of the builder
+func (exp flExpression) And(premise fuzzy.Premise) flExpression {
+	return exp.connect(premise, exp.fl.optr.And)
+}
+
+// Or connects the current expression and a premise with the OR connector of the builder
+func (exp flExpression) Or(premise fuzzy.Premise) flExpression {
+	return exp.connect(premise, exp.fl.optr.Or)
+}
+
+// XOr connects the current expression and a premise with the XOR connector of the builder
+func (exp flExpression) XOr(premise fuzzy.Premise) flExpression {
+	return exp.connect(premise, exp.fl.optr.XOr)
+}
+
+// Not complements the current expression
+func (exp flExpression) Not() flExpression {
+	return flExpression{
+		fl:    exp.fl,
+		fzExp: exp.fzExp.Not(),
+	}
+}
+
+// Then describes the consequence of an implication AND stores the rule into the builder
+// At least one consequence is expected
+func (exp flExpression) Then(consequence ...fuzzy.IDSet) {
+	rule := fuzzy.NewRule(
+		exp.fzExp,
+		exp.fl.impl,
+		consequence,
+	)
+
+	// Add the rule to the builder
+	exp.fl.add(rule)
+}

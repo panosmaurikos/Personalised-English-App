@@ -15,15 +15,28 @@ import (
 )
 
 func Init() {
-	// Always try to load .env from the project root
-	if err := godotenv.Load(filepath.Join("C:/Users/Panos/Desktop/Personalised-English-App", ".env")); err != nil {
-		log.Printf("No .env file found at project root: %v", err)
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Printf("Could not get working directory: %v", err)
+		return
+	}
+	projectRoot := filepath.Dir(wd)
+	envPath := filepath.Join(projectRoot, ".env")
+	if err := godotenv.Load(envPath); err != nil {
+		log.Printf("No .env file found at %s: %v", envPath, err)
 	} else {
-		log.Println("Loaded .env file from project root")
+		log.Printf("Loaded .env file from %s", envPath)
 	}
 }
 
 func GetDB() (*sql.DB, error) {
+	// Print env vars for debugging
+	log.Printf("DB_HOST: %s", os.Getenv("DB_HOST"))
+	log.Printf("DB_PORT: %s", os.Getenv("DB_PORT"))
+	log.Printf("DB_USER: %s", os.Getenv("DB_USER"))
+	log.Printf("DB_PASS: %s", os.Getenv("DB_PASS"))
+	log.Printf("DB_NAME: %s", os.Getenv("DB_NAME"))
+
 	dsn := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		os.Getenv("DB_HOST"),
