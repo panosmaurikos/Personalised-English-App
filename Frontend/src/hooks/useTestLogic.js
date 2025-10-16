@@ -1,184 +1,89 @@
-import { useState } from "react";
-
-// Expanded questions for a quick English level test
-const QUESTIONS = [
-  // Vocabulary
-  {
-    type: "vocabulary",
-    instruction: "Choose the correct word",
-    question: "She ___ to the store every morning.",
-    options: ["go", "goes", "going", "gone"],
-    answer: "goes",
-  },
-  {
-    type: "vocabulary",
-    instruction: "Choose the correct word",
-    question: "I have a ___ dog.",
-    options: ["big", "bigger", "biggest", "more big"],
-    answer: "big",
-  },
-  {
-    type: "vocabulary",
-    instruction: "Choose the correct word",
-    question: "They ___ football on Sundays.",
-    options: ["play", "plays", "playing", "played"],
-    answer: "play",
-  },
-  // Grammar
-  {
-    type: "grammar",
-    instruction: "Which sentence is correct?",
-    question: "",
-    options: [
-      "He don't like apples.",
-      "He doesn't likes apples.",
-      "He doesn't like apples.",
-      "He don't likes apples.",
-    ],
-    answer: "He doesn't like apples.",
-  },
-  {
-    type: "grammar",
-    instruction: "Which sentence is correct?",
-    question: "",
-    options: [
-      "She can sings well.",
-      "She can sing well.",
-      "She cans sing well.",
-      "She can to sing well.",
-    ],
-    answer: "She can sing well.",
-  },
-  {
-    type: "grammar",
-    instruction: "Which sentence is correct?",
-    question: "",
-    options: [
-      "We was at the park.",
-      "We were at the park.",
-      "We is at the park.",
-      "We are at the parks.",
-    ],
-    answer: "We were at the park.",
-  },
-  // Reading
-  {
-    type: "reading",
-    instruction: "Read and answer",
-    question: "'Tom is taller than Jim.' Who is taller?",
-    options: ["Tom", "Jim", "Both", "Neither"],
-    answer: "Tom",
-  },
-  {
-    type: "reading",
-    instruction: "Read and answer",
-    question: "'Anna has two cats and one dog.' How many pets does Anna have?",
-    options: ["1", "2", "3", "4"],
-    answer: "3",
-  },
-  {
-    type: "reading",
-    instruction: "Read and answer",
-    question: "'The library opens at 9 AM and closes at 5 PM.' When does the library close?",
-    options: ["9 AM", "5 PM", "Noon", "8 PM"],
-    answer: "5 PM",
-  },
-  // Listening (TTS)
-  {
-    type: "listening",
-    instruction: "Listen and choose the correct sentence",
-    question: "",
-    options: [
-      "The weather is rainy and cold today.",
-      "The weather is snowy and windy today.",
-      "The weather is sunny and warm today.",
-      "The weather is cloudy and humid today.",
-    ],
-    answer: "The weather is sunny and warm today.",
-    tts: "The weather is sunny and warm today.",
-  },
-  {
-    type: "listening",
-    instruction: "Listen and choose the correct sentence",
-    question: "",
-    options: [
-      "My favorite color is blue.",
-      "My favorite color is green.",
-      "My favorite color is red.",
-      "My favorite color is yellow.",
-    ],
-    answer: "My favorite color is blue.",
-    tts: "My favorite color is blue.",
-  },
-  {
-    type: "listening",
-    instruction: "Listen and choose the correct sentence",
-    question: "",
-    options: [
-      "I usually eat breakfast at 7 o'clock.",
-      "I usually eat breakfast at 8 o'clock.",
-      "I usually eat breakfast at 9 o'clock.",
-      "I usually eat breakfast at 10 o'clock.",
-    ],
-    answer: "I usually eat breakfast at 8 o'clock.",
-    tts: "I usually eat breakfast at 8 o'clock.",
-  },
-];
+import { useState, useEffect, useCallback } from "react";
 
 function useTestLogic() {
+  const [questions, setQuestions] = useState([]);
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState([]);
   const [showResult, setShowResult] = useState(false);
+  const [startTime, setStartTime] = useState(Date.now());
+  const [responseTimes, setResponseTimes] = useState([]);
 
-  // Play text as speech for listening questions
-  const playTTS = (text) => {
+  // Fetch questions from backend
+  useEffect(() => {
+    fetch(`${process.env.REACT_APP_API_URL}/placement-questions`)
+      .then((res) => res.json())
+      .then((data) => setQuestions(data))
+      .catch((err) => console.error("Error fetching questions:", err));
+  }, []);
+
+  useEffect(() => {
+    setStartTime(Date.now());
+  }, [step]);
+
+  const playTTS = useCallback((text) => {
     const utterance = new window.SpeechSynthesisUtterance(text);
     window.speechSynthesis.speak(utterance);
-  };
+  }, []);
 
-  const handleOption = (option) => {
-    setAnswers([...answers, option]);
-    if (step < QUESTIONS.length - 1) {
+  const handleOption = useCallback((option) => {
+    const timeTaken = (Date.now() - startTime) / 1000;
+    setResponseTimes((prev) => [...prev, timeTaken]);
+    setAnswers((prev) => [...prev, option]);
+    if (step < questions.length - 1) {
       setStep(step + 1);
     } else {
       setShowResult(true);
     }
-  };
+  }, [step, startTime, questions.length]);
 
-  const getScore = () => {
+  const getScore = useCallback(() => {
     let score = 0;
-    QUESTIONS.forEach((q, i) => {
-      if (answers[i] === q.answer) score++;
+    questions.forEach((q, i) => {
+      if (q.answer && ['A', 'B', 'C', 'D'].includes(q.answer)) {
+        const correctOption = q.options['A'] ? q.options[q.answer] : q.options[["A", "B", "C", "D"].indexOf(q.answer)];
+        if (answers[i] === correctOption) score++;
+      } else {
+        if (answers[i] === q.answer) score++;
+      }
     });
     return score;
-  };
+  }, [questions, answers]);
 
-  const getLevel = (score) => {
-    if (score >= 10) return "ECPE (C2)";
-    if (score >= 7) return "ECCE (B2)";
-    if (score >= 4) return "MET Digital (A2-C1)";
-    return "MET Go! Digital (A1-B2)";
-  };
+  const getAvgTime = useCallback(() => {
+    if (responseTimes.length === 0) return 0;
+    return responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length;
+  }, [responseTimes]);
 
-  const restartTest = () => {
+  const restartTest = useCallback(() => {
     setStep(0);
     setAnswers([]);
     setShowResult(false);
-  };
+    setResponseTimes([]);
+    fetch(`${process.env.REACT_APP_API_URL}/placement-questions`)
+      .then((res) => res.json())
+      .then((data) => setQuestions(data))
+      .catch((err) => console.error("Error refetching questions:", err));
+  }, []);
+
+  const getCorrectOptionValue = useCallback((q) => {
+    if (q.answer && ['A', 'B', 'C', 'D'].includes(q.answer) && Array.isArray(q.options)) {
+      const idx = ['A', 'B', 'C', 'D'].indexOf(q.answer);
+      return q.options[idx];
+    }
+    return q.answer;
+  }, []);
 
   return {
     step,
-    setStep,
     answers,
-    setAnswers,
     showResult,
-    setShowResult,
-    QUESTIONS,
+    QUESTIONS: questions,
     playTTS,
     handleOption,
     getScore,
-    getLevel,
+    getAvgTime,
     restartTest,
+    getCorrectOptionValue,
   };
 }
 

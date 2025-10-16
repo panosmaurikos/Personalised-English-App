@@ -9,7 +9,6 @@ const Login = ({ onToggle, login, handleToast }) => {
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [resetSuccess, setResetSuccess] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -75,7 +74,6 @@ const Login = ({ onToggle, login, handleToast }) => {
         body: JSON.stringify({ code: otp, new_password: newPassword }),
       });
       if (!res.ok) throw new Error('Failed to reset password');
-      setResetSuccess(true);
       showError('');
       handleToast('Password reset successful! You can now log in.', 'success');
       setShowForgot(false);

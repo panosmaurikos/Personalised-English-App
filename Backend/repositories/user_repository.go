@@ -119,3 +119,22 @@ func (r *UserRepository) GetUserByUsernameOrEmail(ctx context.Context, identifie
 	}
 	return &user, nil
 }
+
+func (r *UserRepository) GetUserByID(ctx context.Context, id int) (*models.User, error) {
+	query := `
+        SELECT id, username, email, password, role, create_time
+        FROM users
+        WHERE id = $1
+        LIMIT 1`
+	row := r.db.QueryRowContext(ctx, query, id)
+
+	var user models.User
+	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.Role, &user.CreateTime)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}

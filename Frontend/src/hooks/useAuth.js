@@ -22,8 +22,8 @@ const useAuth = (handleToast) => {
       setIsAuthenticated(true);
       try {
         const decoded = jwtDecode(token);
-        // If your JWT payload contains username
-        setUser({ username: decoded.username });
+        // Set both username and role from JWT
+        setUser({ username: decoded.username, role: decoded.role });
       } catch {
         setUser(null);
       }

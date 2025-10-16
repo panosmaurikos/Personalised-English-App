@@ -53,7 +53,7 @@ func (h *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate JWT token
-	token, err := GenerateJWT(user.ID, user.Username)
+	token, err := GenerateJWT(user.ID, user.Username, user.Role)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Could not generate token")
 		return
@@ -65,6 +65,7 @@ func (h *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"message":  "User logged in successfully",
 		"token":    token,
 		"username": user.Username,
+		"role":     user.Role,
 	})
 }
 

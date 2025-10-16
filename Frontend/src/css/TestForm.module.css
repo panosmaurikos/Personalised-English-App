@@ -1,0 +1,123 @@
+.formContainer {
+  padding: 2rem;
+}
+
+.formTitle {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.formGroup label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #495057;
+}
+
+.input, .textarea, .select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.input:focus, .textarea:focus, .select:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.textarea {
+  height: 100px;
+  resize: vertical;
+}
+
+.questionsHeader {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.questionBlock {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.addBtn {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  transition: background 0.3s;
+}
+
+.addBtn:hover {
+  background: #218838;
+}
+
+.removeBtn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+.removeBtn:hover {
+  background: #c82333;
+}
+
+.submitBtn {
+  background: #0d6efd;
+  color: white;
+  border: none;
+  padding: 0.75rem;
+  width: 100%;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+.submitBtn:hover {
+  background: #0a58ca;
+}
+
+.cancelBtn {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.75rem;
+  width: 100%;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-top: 1rem;
+  transition: background 0.3s;
+}
+
+.cancelBtn:hover {
+  background: #5a6268;
+}
+
+.formHint {
+  font-size: 0.9rem;
+  color: #6c757d;
+}

@@ -13,7 +13,6 @@ import (
 	"github.com/panosmaurikos/personalisedenglish/backend/repositories"
 	"github.com/panosmaurikos/personalisedenglish/backend/router"
 	"github.com/panosmaurikos/personalisedenglish/backend/services"
-	"github.com/rs/cors"
 )
 
 func main() {
@@ -34,23 +33,17 @@ func main() {
 	loginHandler := api.NewLoginHandler(userSvc)
 	forgotPasswordHandler := api.NewForgotPasswordHandler(userSvc)
 	resetPasswordOTPHandler := api.NewResetPasswordOTPHandler(userSvc)
+	testRepo := repositories.NewTestRepository(db)
+	testService := services.NewTestService(testRepo, userRepo)
 
 	// 4. Router setup
 	h := router.NewHandler()
-	r := h.SetupRouter(registerHandler, loginHandler, forgotPasswordHandler, resetPasswordOTPHandler)
-
-	// 5. CORS middleware
-	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000"},
-		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
-		AllowedHeaders:   []string{"Content-Type", "Authorization"},
-		AllowCredentials: true,
-	})
+	r := h.SetupRouter(registerHandler, loginHandler, forgotPasswordHandler, resetPasswordOTPHandler, testService, db)
 
 	// 6. Server setup
 	srv := &http.Server{
 		Addr:         ":" + os.Getenv("SERVER_PORT"),
-		Handler:      c.Handler(r), // CORS wraps the router
+		Handler:      r, // Use the router directly, CORS is handled inside router
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,

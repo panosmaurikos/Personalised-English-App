@@ -35,7 +35,7 @@ func (h *RegisterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := GenerateJWT(user.ID, user.Username)
+	token, err := GenerateJWT(user.ID, user.Username, user.Role)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Failed to generate token"))

@@ -1,3 +1,4 @@
+/* From previous Navbar.css + any globals moved */
 .navbar-test-btn {
   font-weight: 800;
   letter-spacing: 1px;
@@ -21,19 +22,36 @@
   gap: 0.5em;
 }
 
-.navbar-brand img {
+.navbar-brand-img {
   height: 32px;
+  margin-right: 8px;
 }
 
-.navbar .nav-link {
+.nav-link {
   font-size: 1.05rem;
   letter-spacing: 1px;
 }
 
-.navbar .nav-link.text-danger {
+.nav-link.text-danger {
   color: #dc3545 !important;
 }
 
-.navbar .nav-link.text-secondary {
+.nav-link.text-secondary {
   color: #6c757d !important;
+}
+
+.btn-user {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-user-img {
+  width: 24px;
+  height: 24px;
+  display: block;
+  margin: 0 auto;
 }

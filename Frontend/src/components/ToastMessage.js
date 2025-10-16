@@ -1,23 +1,18 @@
 import { Toast, ToastContainer } from "react-bootstrap";
-import "../css/Toast.css"; // Import the toast-specific styles
+import styles from '../css/Toast.module.css';
 
-/**
- * Props:
- * - toast: object with { show, message, bg } for toast state
- * - setToast: setter to update toast state
- */
 function ToastMessage({ toast, setToast }) {
   return (
-    <ToastContainer position="top-center" className="p-3 toastContainer">
+    <ToastContainer position="top-center" className={`p-3 ${styles.toastContainer}`}>
       <Toast
         show={toast.show}
-        bg={toast.bg} // Use Bootstrap's default background classes
+        bg={toast.bg}
         onClose={() => setToast({ ...toast, show: false })}
         delay={2000}
         autohide
-        className={`toast ${toast.show ? 'fadeIn' : 'fadeOut'}`}
+        className={`toast ${toast.show ? styles.fadeIn : styles.fadeOut}`}
       >
-        <Toast.Body className="toastBody">{toast.message}</Toast.Body>
+        <Toast.Body className={styles.toastBody}>{toast.message}</Toast.Body>
       </Toast>
     </ToastContainer>
   );

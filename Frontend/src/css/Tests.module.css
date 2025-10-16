@@ -66,6 +66,7 @@
   transition: all 0.2s;
   cursor: pointer;
 }
+
 .test-option-btn:hover,
 .test-option-btn:focus {
   background: #0d6efd;
@@ -104,6 +105,7 @@
   transition: background 0.2s;
   cursor: pointer;
 }
+
 .test-retry-btn:hover,
 .test-retry-btn:focus {
   background: #145c32;
@@ -166,7 +168,7 @@
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background: #d0e6ff !important; /* Even more visible blue */
+  background: #d0e6ff !important;
   transition: background 0.2s, color 0.2s, box-shadow 0.2s !important;
 }
 

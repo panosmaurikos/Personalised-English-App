@@ -1,0 +1,22 @@
+.contact-fab {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  width: 60px;
+  height: 60px;
+  background: #fff;
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 4px 16px rgba(220,53,69,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+
+.contact-fab:hover {
+  box-shadow: 0 8px 24px rgba(220,53,69,0.25);
+  background: #ffeaea;
+}

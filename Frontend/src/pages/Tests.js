@@ -1,11 +1,9 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import useTestLogic from "../hooks/useTestLogic";
-import "../css/Tests.css";
+import styles from "../css/Tests.module.css";
+import { useAuth } from "../hooks/useAuth";
 
-/**
- * The Tests component renders the English level test UI.
- * All quiz logic and state are managed by the useTestLogic hook.
- */
 function Tests() {
   const {
     step,
@@ -14,11 +12,67 @@ function Tests() {
     playTTS,
     handleOption,
     getScore,
-    getLevel,
+    getAvgTime,
     restartTest,
+    answers,
+    getCorrectOptionValue,
   } = useTestLogic();
+  const [fuzzyLevel, setFuzzyLevel] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(""); // State for error messages
+  const navigate = useNavigate();
 
-  // Bootstrap badge color based on question type
+  useEffect(() => {
+    if (showResult && !isSubmitting) {
+      setIsSubmitting(true);
+      const token = localStorage.getItem("jwt");
+      if (!token) {
+        setError("Please log in to submit the test.");
+        setIsSubmitting(false);
+        return;
+      }
+      const answersPayload = QUESTIONS.map((q, i) => ({
+        question_id: q.id,
+        selected_option: answers[i] || "",
+        correct_option: getCorrectOptionValue(q),
+      }));
+      const payload = {
+        score: (getScore() / QUESTIONS.length) * 100,
+        avg_time: getAvgTime(),
+        answers: answersPayload,
+      };
+      fetch(`${process.env.REACT_APP_API_URL}/complete-test`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      })
+        .then(async (res) => {
+          const text = await res.text();
+          try {
+            const data = JSON.parse(text);
+            if (!res.ok) {
+              throw new Error(data.error || "Unknown error");
+            }
+            return data;
+          } catch (e) {
+            throw new Error(text || "Failed to parse response");
+          }
+        })
+        .then((data) => {
+          setFuzzyLevel(data.level);
+          setError("");
+          setIsSubmitting(false);
+        })
+        .catch((err) => {
+          setError(err.message);
+          setIsSubmitting(false);
+        });
+    }
+  }, [showResult, QUESTIONS, answers, getScore, getAvgTime, getCorrectOptionValue]);
+
   const typeBadge = (type) => {
     switch (type) {
       case "vocabulary":
@@ -34,95 +88,93 @@ function Tests() {
     }
   };
 
-  // Capitalize first letter
-  const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+  const capitalize = (str) => (str && typeof str === "string" ? str.charAt(0).toUpperCase() + str.slice(1) : "");
 
   return (
-    <div className="test-container">
-      <div className="test-card">
-        <h2 className="test-title text-center">
-          Quick English Level Test
-        </h2>
-        <p className="test-desc text-center">
+    <div className={styles["test-container"]}>
+      <button 
+        className={styles["test-retry-btn"]} // Reusing test-retry-btn style for consistency, adjust if needed
+        style={{ background: '#6c757d', marginBottom: '1rem' }} 
+        onClick={() => navigate(-1)}
+      >
+        Back
+      </button>
+      <div className={styles["test-card"]}>
+        <h2 className={styles["test-title"]}>Quick English Level Test</h2>
+        <p className={styles["test-desc"]}>
           Answer a few questions to discover your English level and get personalized recommendations!
         </p>
-
+        {error && <div className="alert alert-danger">{error}</div>}
         {!showResult ? (
-          <div>
-            <div className="test-question-block">
-              <div className="test-header-row">
-                {/* Question number button - now blue for distinction */}
-                <span
-                  className="test-badge test-question-badge"
-                >
-                  Question {step + 1} of {QUESTIONS.length}
-                </span>
-                {/* Centered and visually improved type badge */}
-                <span
-                  className={`badge bg-${typeBadge(QUESTIONS[step].type)} test-type-badge`}
-                >
-                  {capitalize(QUESTIONS[step].type)}
-                </span>
-              </div>
-              {/* Instruction */}
-              <h5 className="test-question test-instruction text-center">
-                {QUESTIONS[step].instruction}
-              </h5>
-              {/* Question */}
-              {QUESTIONS[step].question && (
-                <div className="test-question-detail text-center">
-                  {QUESTIONS[step].question}
+          QUESTIONS.length > 0 && QUESTIONS[step] ? (
+            <div>
+              <div className={styles["test-question-block"]}>
+                <div className={styles["test-header-row"]}>
+                  <span className={`${styles["test-badge"]} ${styles["test-question-badge"]}`}>
+                    Question {step + 1} of {QUESTIONS.length}
+                  </span>
+                  <span className={`badge bg-${typeBadge(QUESTIONS[step].type)} ${styles["test-type-badge"]}`}>
+                    {capitalize(QUESTIONS[step].type)}
+                  </span>
                 </div>
-              )}
-              {/* Use TTS for listening questions */}
-              {QUESTIONS[step].type === "listening" && (
-                <div className="test-audio-row text-center mb-4">
-                  <button
-                    className="btn btn-light test-audio-btn d-inline-flex align-items-center justify-content-center"
-                    type="button"
-                    onClick={() => playTTS(QUESTIONS[step].tts)}
-                  >
-                    <span className="me-2 test-audio-icon">
-                      <i className="bi bi-volume-up-fill"></i>
-                    </span>
-                    Play Sentence
-                  </button>
+                <h5 className={`${styles["test-question"]} ${styles["test-instruction"]}`}>
+                  {QUESTIONS[step].instruction || "Choose the correct answer"}
+                </h5>
+                {QUESTIONS[step].question && (
+                  <div className={styles["test-question-detail"]}>{QUESTIONS[step].question}</div>
+                )}
+                {QUESTIONS[step].category === "listening" && (
+                  <div className={styles["test-audio-row"]}>
+                    <button
+                      className={styles["test-audio-btn"]}
+                      type="button"
+                      onClick={() =>
+                        playTTS(
+                          QUESTIONS[step].tts && typeof QUESTIONS[step].tts === "string"
+                            ? QUESTIONS[step].tts
+                            : QUESTIONS[step].question || ""
+                        )
+                      }
+                    >
+                      <span className="me-2 test-audio-icon">
+                        <i className="bi bi-volume-up-fill"></i>
+                      </span>
+                      Play Sentence
+                    </button>
+                  </div>
+                )}
+                <div className={styles["test-options"]}>
+                  {QUESTIONS[step].options.map((option) => (
+                    <button
+                      key={option}
+                      className={styles["test-option-btn"]}
+                      onClick={() => handleOption(option)}
+                    >
+                      {option}
+                    </button>
+                  ))}
                 </div>
-              )}
-              <div className="test-options d-flex flex-column align-items-center">
-                {QUESTIONS[step].options.map((option) => (
-                  <button
-                    key={option}
-                    className="test-option-btn"
-                    onClick={() => handleOption(option)}
-                  >
-                    {option}
-                  </button>
-                ))}
               </div>
             </div>
-          </div>
+          ) : (
+            <div>Loading questions...</div>
+          )
         ) : (
-          <div className="test-result">
-            <h3 className="test-level text-center">
-              Your Level: {getLevel(getScore())}
-            </h3>
-            <div className="test-score text-center">
+          <div className={styles["test-result"]}>
+            <h3 className={styles["test-level"]}>Your Level: {fuzzyLevel || "Calculating..."}</h3>
+            <div className={styles["test-score"]}>
               <span>
                 Score: {getScore()} / {QUESTIONS.length}
               </span>
             </div>
-            <p className="test-feedback text-center">
+            <p className={styles["test-feedback"]}>
               {getScore() >= 10 && "Excellent! You have a strong command of English."}
-              {getScore() >= 7 && "Great job! You have a good understanding of English."}
-              {getScore() >= 4 && "Not bad! You have a basic understanding of English."}
+              {getScore() >= 7 && getScore() < 10 && "Great job! You have a good understanding of English."}
+              {getScore() >= 4 && getScore() < 7 && "Not bad! You have a basic understanding of English."}
               {getScore() < 4 && "Keep trying! You might benefit from some review."}
             </p>
             <div className="text-center">
-              <button
-                className="test-retry-btn btn btn-success px-4 py-2"
-                onClick={restartTest}
-              >
+              <button className={styles["test-retry-btn"]} onClick={restartTest}>
                 Retake Test
               </button>
             </div>
