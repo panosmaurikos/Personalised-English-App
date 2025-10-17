@@ -27,8 +27,13 @@ function Navbar({
   };
 
   const handleDashboardClick = (e) => {
-    e.preventDefault();
-    navigate('/dashboard');
+    e.preventDefault(); // Αυτό είναι καλή πρακτική, αλλά δεν είναι απαραίτητο για το <button>
+    // Ελέγχουμε τον ρόλο του χρήστη για να προσδιορίσουμε το σωστό URL
+    if (user?.role === 'teacher') {
+      navigate('/teacher-dashboard'); // Οδηγούμε τον δάσκαλο στο δικό του dashboard
+    } else {
+      navigate('/dashboard'); // Οδηγούμε τον μαθητή στο δικό του dashboard
+    }
   };
 
   const handleLogoClick = (e) => {
@@ -45,7 +50,7 @@ function Navbar({
         href="/"
         onClick={handleLogoClick}
       >
-        <img src="https://img.icons8.com/color/48/000000/graduation-cap.png" alt="LinguaLearn" className={styles['navbar-brand-img']} />
+        <img src="https://img.icons8.com/color/48/000000/graduation-cap.png    " alt="LinguaLearn" className={styles['navbar-brand-img']} />
         LinguaLearn
       </a>
 
@@ -95,15 +100,19 @@ function Navbar({
             </a>
           </li>
 
-          {isAuthenticated && user?.role === 'teacher' && (
+          {/* Νέο κουμπί για το Dashboard - Εμφανίζεται μόνο αν είναι συνδεδεμένος */}
+          {isAuthenticated && (
             <li className="nav-item mx-2">
-              <a
-                className={`fw-bold btn btn-outline-primary ${styles['navbar-test-btn']}`}  // Similar style
-                href="/dashboard"
+              {/* Χρήση <button> αντί για <a> */}
+              <button
+                className={`fw-bold btn btn-outline-primary ${styles['navbar-test-btn']}`} // Χρησιμοποιούμε το ίδιο style ή ένα διαφορετικό
                 onClick={handleDashboardClick}
+                
+                // Προσθέτουμε type="button" για να μην προκαλέσει submit αν είναι μέσα σε form (δεν είναι, αλλά καλή πρακτική)
+                type="button"
               >
-                Dashboard
-              </a>
+                My Dashboard {/* Ή οτιδήποτε άλλο θέλεις να λέει */}
+              </button>
             </li>
           )}
 
@@ -131,7 +140,7 @@ function Navbar({
             title="Logout"
           >
             <img
-              src="https://img.icons8.com/ios-glyphs/30/fa314a/logout-rounded-up.png"
+              src="https://img.icons8.com/ios-glyphs/30/fa314a/logout-rounded-up.png    "
               alt="Logout"
               className={styles['btn-user-img']}
             />
@@ -144,7 +153,7 @@ function Navbar({
           title="Login/Register"
         >
           <img
-            src="https://img.icons8.com/ios-glyphs/30/fa314a/user--v1.png"
+            src="https://img.icons8.com/ios-glyphs/30/fa314a/user--v1.png    "
             alt="User"
             className={styles['btn-user-img']}
           />

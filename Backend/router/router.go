@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/lib/pq"
 	"github.com/panosmaurikos/personalisedenglish/backend/api"
+	"github.com/panosmaurikos/personalisedenglish/backend/feedback" // <--- ΠΡΟΣΘΗΚΗ IMPORT
 	"github.com/panosmaurikos/personalisedenglish/backend/fuzzylogic"
 	"github.com/panosmaurikos/personalisedenglish/backend/models"
 	"github.com/panosmaurikos/personalisedenglish/backend/services"
@@ -238,7 +239,33 @@ func (h *Handler) SetupRouter(
 			return
 		}
 
-		rows, err := db.Query(`
+		// Βρες το τελευταίο test του χρήστη
+		var testID int
+		var fuzzyLevel string
+		err := db.QueryRow(`
+		SELECT id, fuzzy_level
+		FROM test_results_level
+		WHERE user_id = $1
+		ORDER BY taken_at DESC
+		LIMIT 1
+	`, userID).Scan(&testID, &fuzzyLevel)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode([]map[string]interface{}{}) // empty array
+			return
+		}
+
+		// Φέρε misconceptions για το τελευταίο test (π.χ. ["grammar", "vocabulary"])
+		misconceptions, err := feedback.DetectMisconceptions(db, testID)
+		categories := []string{}
+		if err == nil && len(misconceptions) > 0 {
+			for _, m := range misconceptions {
+				categories = append(categories, m.Category)
+			}
+		}
+		// Αν δεν έχει misconceptions, πάρε top λάθος κατηγορίες από το ιστορικό
+		if len(categories) == 0 {
+			rows, err := db.Query(`
 			SELECT pq.category
 			FROM test_answers ta
 			JOIN placement_questions pq ON ta.question_id = pq.id
@@ -247,63 +274,71 @@ func (h *Handler) SetupRouter(
 			ORDER BY COUNT(*) DESC
 			LIMIT 2
 		`, userID)
-		if err != nil {
-			http.Error(w, `{"error": "Failed to fetch categories: `+err.Error()+`"}`, http.StatusInternalServerError)
-			return
-		}
-		defer rows.Close()
-
-		var categories []string
-		for rows.Next() {
-			var category string
-			if err := rows.Scan(&category); err != nil {
-				http.Error(w, `{"error": "Failed to scan categories: `+err.Error()+`"}`, http.StatusInternalServerError)
-				return
+			if err == nil {
+				for rows.Next() {
+					var category string
+					_ = rows.Scan(&category)
+					categories = append(categories, category)
+				}
+				rows.Close()
 			}
-			categories = append(categories, category)
+		}
+
+		// Επιλογή difficulty bounds με βάση fuzzy_level
+		difficultyMin, difficultyMax := 1, 5
+		switch fuzzyLevel {
+		case "Beginner":
+			difficultyMin, difficultyMax = 1, 2
+		case "Intermediate":
+			difficultyMin, difficultyMax = 2, 3
+		case "Advanced":
+			difficultyMin, difficultyMax = 3, 5
 		}
 
 		var questions []map[string]interface{}
 		if len(categories) > 0 {
 			rows, err := db.Query(`
-				SELECT id, question_text, question_type, options, correct_answer, points, category
-				FROM placement_questions
-				WHERE category = ANY($1)
-				ORDER BY RANDOM()
-				LIMIT 10
-			`, categories)
-			if err != nil {
-				http.Error(w, `{"error": "Failed to fetch questions: `+err.Error()+`"}`, http.StatusInternalServerError)
-				return
-			}
-			defer rows.Close()
-
-			for rows.Next() {
-				var q struct {
-					ID            int
-					QuestionText  string
-					QuestionType  string
-					Options       []byte
-					CorrectAnswer string
-					Points        int
-					Category      string
+			SELECT id, question_text, question_type, options, correct_answer, points, category, difficulty
+			FROM placement_questions
+			WHERE category = ANY($1)
+			  AND difficulty BETWEEN $2 AND $3
+			ORDER BY RANDOM()
+			LIMIT 10
+		`, pq.Array(categories), difficultyMin, difficultyMax)
+			if err == nil {
+				defer rows.Close()
+				for rows.Next() {
+					var q struct {
+						ID            int
+						QuestionText  string
+						QuestionType  string
+						Options       []byte
+						CorrectAnswer string
+						Points        int
+						Category      string
+						Difficulty    int
+					}
+					if err := rows.Scan(&q.ID, &q.QuestionText, &q.QuestionType, &q.Options, &q.CorrectAnswer, &q.Points, &q.Category, &q.Difficulty); err == nil {
+						var opts []string
+						_ = json.Unmarshal(q.Options, &opts)
+						questions = append(questions, map[string]interface{}{
+							"id":         q.ID,
+							"question":   q.QuestionText,
+							"type":       q.QuestionType,
+							"options":    opts,
+							"answer":     q.CorrectAnswer,
+							"points":     q.Points,
+							"category":   q.Category,
+							"difficulty": q.Difficulty,
+						})
+					}
 				}
-				if err := rows.Scan(&q.ID, &q.QuestionText, &q.QuestionType, &q.Options, &q.CorrectAnswer, &q.Points, &q.Category); err != nil {
-					http.Error(w, `{"error": "Failed to scan question: `+err.Error()+`"}`, http.StatusInternalServerError)
-					return
-				}
-				var opts []string
-				_ = json.Unmarshal(q.Options, &opts)
-				questions = append(questions, map[string]interface{}{
-					"id":       q.ID,
-					"question": q.QuestionText,
-					"type":     q.QuestionType,
-					"options":  opts,
-					"answer":   q.CorrectAnswer,
-					"points":   q.Points,
-					"category": q.Category,
-				})
 			}
+		}
+		if len(questions) == 0 {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode([]map[string]interface{}{}) // empty array
+			return
 		}
 		json.NewEncoder(w).Encode(questions)
 	}).Methods("GET")
@@ -349,6 +384,49 @@ func (h *Handler) SetupRouter(
 			})
 		}
 		json.NewEncoder(w).Encode(history)
+	}).Methods("GET")
+
+	// NEW: Misconception Detection Endpoint
+	protectedRouter.HandleFunc("/misconceptions/{testID}", func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := r.Context().Value("userID").(int)
+		if !ok {
+			http.Error(w, `{"error": "Unauthorized"}`, http.StatusUnauthorized)
+			return
+		}
+
+		vars := mux.Vars(r)
+		testID, err := strconv.Atoi(vars["testID"]) // Προσθήκη ελέγχου σφάλματος
+		if err != nil {
+			http.Error(w, `{"error": "Invalid test ID"}`, http.StatusBadRequest)
+			return
+		}
+
+		// Verify the test belongs to the user
+		var testUserID int
+		err = db.QueryRow("SELECT user_id FROM test_results_level WHERE id = $1", testID).Scan(&testUserID)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				http.Error(w, `{"error": "Test not found"}`, http.StatusNotFound)
+				return
+			}
+			http.Error(w, `{"error": "Failed to verify test ownership"}`, http.StatusInternalServerError)
+			return
+		}
+		if testUserID != userID {
+			http.Error(w, `{"error": "Test not found"}`, http.StatusNotFound)
+			return
+		}
+
+		// Use the feedback package to detect misconceptions
+		misconceptions, err := feedback.DetectMisconceptions(db, testID)
+		if err != nil {
+			log.Printf("Error detecting misconceptions: %v", err)
+			http.Error(w, `{"error": "Failed to detect misconceptions"}`, http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(misconceptions)
 	}).Methods("GET")
 
 	teacherRouter := r.PathPrefix("/teacher").Subrouter()

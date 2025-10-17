@@ -1,0 +1,112 @@
+.container {
+  max-width: 650px;
+  margin: 40px auto;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 32px #dbeafe44;
+  padding: 36px 22px;
+  font-family: "Segoe UI", Arial, sans-serif;
+  min-height: 320px;
+}
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+  margin-bottom: 18px;
+}
+.headerIcon {
+  width: 36px;
+  height: 36px;
+}
+.list {
+  padding: 0;
+  list-style: none;
+}
+.questionBlock {
+  margin-bottom: 22px;
+  padding: 20px 14px 16px 14px;
+  background: #f4f7ff;
+  border-radius: 10px;
+  box-shadow: 0 1px 8px #dbeafe33;
+}
+.qTitle {
+  color: #0070f3;
+  font-weight: 600;
+  font-size: 1.08rem;
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  margin-bottom: 7px;
+}
+.optionsList {
+  padding: 0;
+  list-style: none;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.optionBtn, .optionBtnListen {
+  background: #e9f2ff;
+  color: #222;
+  border: none;
+  border-radius: 7px;
+  padding: 10px 12px;
+  font-size: 1.07rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+}
+.optionBtn:hover, .optionBtn:focus {
+  background: #c7e1ff;
+  color: #1e3a8a;
+}
+.optionBtnListen {
+  background: #fffbe9;
+  color: #8d5c00;
+  font-weight: 600;
+  border: 1px solid #ffe083;
+  margin-bottom: 8px;
+}
+.optionBtnListen:hover {
+  background: #ffe9b1;
+}
+.startBtn {
+  background: linear-gradient(90deg, #007bff 60%, #00d4ff 100%);
+  color: #fff;
+  border: none;
+  padding: 12px 32px;
+  border-radius: 9px;
+  font-size: 1.14rem;
+  font-weight: 600;
+  margin-top: 24px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px #b6d6ff33;
+  transition: background 0.18s;
+}
+.startBtn:hover {
+  background: linear-gradient(90deg, #0056b3 60%, #00bbff 100%);
+}
+.resultScore {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 14px 0 22px 0;
+  color: #007f5f;
+}
+@media (max-width: 700px) {
+  .container {
+    max-width: 98vw;
+    padding: 11px 4vw;
+  }
+  .questionBlock {
+    padding: 13px 4px 10px 4px;
+  }
+  .startBtn {
+    padding: 10px 14px;
+    font-size: 1.01rem;
+  }
+}   

@@ -1,8 +1,10 @@
 import React, { useRef } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom"; // <-- Σωστό import!
 import HomePage from "./pages/HomePage";
 import Tests from "./pages/Tests";
+import Dashboard from "./pages/Dashboard";
 import TeacherDashboard from "./pages/TeacherDashboard";
+import Recommended from "./pages/Recommended";
 import AuthModal from "./components/AuthModal";
 import useAuth from "./hooks/useAuth";
 import useContact from "./hooks/useContact";
@@ -12,13 +14,14 @@ import ToastMessage from "./components/ToastMessage";
 import Navbar from "./components/Navbar";
 import ContactPopup from "./components/ContactPopup";
 import ContactFab from "./components/ContactFab";
+import RecommendedTest from "./pages/RecommendedTest";
 
 function App() {
   const location = useLocation();
-  const isHiddenPage = location.pathname === "/tests" || location.pathname === "/dashboard";  // Hide on both /tests and /dashboard
+  const navigate = useNavigate(); // <-- Σωστό hook!
+  const isHiddenPage = location.pathname === "/tests" || location.pathname === "/dashboard" || location.pathname === "/teacher-dashboard" || location.pathname === "/recommended" || location.pathname === "/login";
 
   const { toast, setToast, handleToast } = useToast();
-
   const {
     showAuth,
     authMode,
@@ -55,11 +58,11 @@ function App() {
   };
 
   function PrivateRoute({ children }) {
-    return isAuthenticated ? children : <Navigate to="/" replace />;
+    return isAuthenticated ? children : <Navigate to="/login" replace />;
   }
 
   function PrivateTeacherRoute({ children }) {
-    return isAuthenticated && user?.role === 'teacher' ? children : <Navigate to="/" replace />;
+    return isAuthenticated && user?.role === 'teacher' ? children : <Navigate to="/login" replace />;
   }
 
   return (
@@ -92,6 +95,26 @@ function App() {
           }
         />
         <Route
+          path="/login"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/" replace />
+            ) : (
+              <div className="container">
+                <AuthModal
+                  showAuth={true}
+                  closeAuth={() => navigate("/")}
+                  authMode={authMode}
+                  toggleAuthMode={toggleAuthMode}
+                  login={login}
+                  register={register}
+                  handleToast={handleToast}
+                />
+              </div>
+            )
+          }
+        />
+        <Route
           path="/tests"
           element={
             <PrivateRoute>
@@ -102,9 +125,33 @@ function App() {
         <Route
           path="/dashboard"
           element={
+            <PrivateRoute>
+              <Dashboard />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/teacher-dashboard"
+          element={
             <PrivateTeacherRoute>
               <TeacherDashboard />
             </PrivateTeacherRoute>
+          }
+        />
+        <Route
+          path="/recommended"
+          element={
+            <PrivateRoute>
+              <Recommended />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/recommended-test"
+          element={
+            <PrivateRoute>
+              <RecommendedTest />
+            </PrivateRoute>
           }
         />
       </Routes>
@@ -120,9 +167,7 @@ function App() {
             register={register}
             handleToast={handleToast}
           />
-
           <ContactFab onClick={openContactPopup} />
-
           <ContactPopup
             showContactPopup={showContactPopup}
             setShowContactPopup={closeContactPopup}
