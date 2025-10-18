@@ -19,20 +19,20 @@ function Navbar({
 
   const handleTestsClick = (e) => {
     e.preventDefault();
-    if (isAuthenticated) {
+    if (isAuthenticated && user?.role === 'student') {
       navigate('/tests');
-    } else {
+    } else if (!isAuthenticated) {
       openAuth("register");
     }
+    // teachers should not see test button (hidden below)
   };
 
   const handleDashboardClick = (e) => {
-    e.preventDefault(); // Αυτό είναι καλή πρακτική, αλλά δεν είναι απαραίτητο για το <button>
-    // Ελέγχουμε τον ρόλο του χρήστη για να προσδιορίσουμε το σωστό URL
+    e.preventDefault();
     if (user?.role === 'teacher') {
-      navigate('/teacher-dashboard'); // Οδηγούμε τον δάσκαλο στο δικό του dashboard
+      navigate('/teacher-dashboard');
     } else {
-      navigate('/dashboard'); // Οδηγούμε τον μαθητή στο δικό του dashboard
+      navigate('/dashboard');
     }
   };
 
@@ -50,7 +50,7 @@ function Navbar({
         href="/"
         onClick={handleLogoClick}
       >
-        <img src="https://img.icons8.com/color/48/000000/graduation-cap.png    " alt="LinguaLearn" className={styles['navbar-brand-img']} />
+        <img src="https://img.icons8.com/color/48/000000/graduation-cap.png" alt="LinguaLearn" className={styles['navbar-brand-img']} />
         LinguaLearn
       </a>
 
@@ -90,28 +90,28 @@ function Navbar({
             </>
           )}
 
-          <li className="nav-item mx-2">
-            <a
-              className={`fw-bold btn btn-outline-success ${styles['navbar-test-btn']}`}
-              href="/tests"
-              onClick={handleTestsClick}
-            >
-              Take a Test
-            </a>
-          </li>
+          {/* Show "Take a Test" ONLY for students, never for teachers */}
+          {isAuthenticated && user?.role === 'student' && (
+            <li className="nav-item mx-2">
+              <a
+                className={`fw-bold btn btn-outline-success ${styles['navbar-test-btn']}`}
+                href="/tests"
+                onClick={handleTestsClick}
+              >
+                Take a Test
+              </a>
+            </li>
+          )}
 
-          {/* Νέο κουμπί για το Dashboard - Εμφανίζεται μόνο αν είναι συνδεδεμένος */}
+          {/* Dashboard button routes to correct dashboard */}
           {isAuthenticated && (
             <li className="nav-item mx-2">
-              {/* Χρήση <button> αντί για <a> */}
               <button
-                className={`fw-bold btn btn-outline-primary ${styles['navbar-test-btn']}`} // Χρησιμοποιούμε το ίδιο style ή ένα διαφορετικό
+                className={`fw-bold btn btn-outline-primary ${styles['navbar-test-btn']}`}
                 onClick={handleDashboardClick}
-                
-                // Προσθέτουμε type="button" για να μην προκαλέσει submit αν είναι μέσα σε form (δεν είναι, αλλά καλή πρακτική)
                 type="button"
               >
-                My Dashboard {/* Ή οτιδήποτε άλλο θέλεις να λέει */}
+                My Dashboard
               </button>
             </li>
           )}
@@ -140,7 +140,7 @@ function Navbar({
             title="Logout"
           >
             <img
-              src="https://img.icons8.com/ios-glyphs/30/fa314a/logout-rounded-up.png    "
+              src="https://img.icons8.com/ios-glyphs/30/fa314a/logout-rounded-up.png"
               alt="Logout"
               className={styles['btn-user-img']}
             />
@@ -153,7 +153,7 @@ function Navbar({
           title="Login/Register"
         >
           <img
-            src="https://img.icons8.com/ios-glyphs/30/fa314a/user--v1.png    "
+            src="https://img.icons8.com/ios-glyphs/30/fa314a/user--v1.png"
             alt="User"
             className={styles['btn-user-img']}
           />

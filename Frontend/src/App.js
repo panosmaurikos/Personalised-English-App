@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom"; // <-- Σωστό import!
+import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import Tests from "./pages/Tests";
 import Dashboard from "./pages/Dashboard";
@@ -18,8 +18,14 @@ import RecommendedTest from "./pages/RecommendedTest";
 
 function App() {
   const location = useLocation();
-  const navigate = useNavigate(); // <-- Σωστό hook!
-  const isHiddenPage = location.pathname === "/tests" || location.pathname === "/dashboard" || location.pathname === "/teacher-dashboard" || location.pathname === "/recommended" || location.pathname === "/login";
+  const navigate = useNavigate();
+
+  const isHiddenPage =
+    location.pathname === "/tests" ||
+    location.pathname === "/dashboard" ||
+    location.pathname === "/teacher-dashboard" ||
+    location.pathname === "/recommended" ||
+    location.pathname === "/login";
 
   const { toast, setToast, handleToast } = useToast();
   const {
@@ -57,12 +63,16 @@ function App() {
     ref.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  function PrivateRoute({ children }) {
-    return isAuthenticated ? children : <Navigate to="/login" replace />;
-  }
-
-  function PrivateTeacherRoute({ children }) {
-    return isAuthenticated && user?.role === 'teacher' ? children : <Navigate to="/login" replace />;
+  // Improved PrivateRoute with role check
+  function PrivateRoute({ children, requiredRole = null }) {
+    if (!isAuthenticated) return <Navigate to="/login" replace />;
+    if (requiredRole && user?.role !== requiredRole) {
+      // If teacher tries to access student route, redirect to teacher-dashboard
+      if (user?.role === "teacher") return <Navigate to="/teacher-dashboard" replace />;
+      // If student tries to access teacher route, redirect to dashboard
+      return <Navigate to="/dashboard" replace />;
+    }
+    return children;
   }
 
   return (
@@ -114,10 +124,11 @@ function App() {
             )
           }
         />
+        {/* Student-only routes */}
         <Route
           path="/tests"
           element={
-            <PrivateRoute>
+            <PrivateRoute requiredRole="student">
               <Tests />
             </PrivateRoute>
           }
@@ -125,19 +136,21 @@ function App() {
         <Route
           path="/dashboard"
           element={
-            <PrivateRoute>
+            <PrivateRoute requiredRole="student">
               <Dashboard />
             </PrivateRoute>
           }
         />
+        {/* Teacher-only route */}
         <Route
           path="/teacher-dashboard"
           element={
-            <PrivateTeacherRoute>
+            <PrivateRoute requiredRole="teacher">
               <TeacherDashboard />
-            </PrivateTeacherRoute>
+            </PrivateRoute>
           }
         />
+        {/* Both roles can access recommended */}
         <Route
           path="/recommended"
           element={

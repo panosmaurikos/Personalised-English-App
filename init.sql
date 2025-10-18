@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS test_results_level (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     teacher_id INTEGER REFERENCES users(id) ON DELETE SET NULL, 
-    score INTEGER NOT NULL,
+    score REAL NOT NULL,
     avg_response_time REAL,
     vocabulary_pct REAL,
     grammar_pct REAL,
@@ -68,10 +68,95 @@ CREATE TABLE placement_questions (
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT now()
 );
 
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    test_result_id INTEGER REFERENCES test_results_level(id) ON DELETE CASCADE, -- <-- ΣΩΣΤΟ
+    question_id INTEGER,
+    selected_option VARCHAR(255),
+    correct_option VARCHAR(255),
+    is_correct BOOLEAN,
+    answered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
 INSERT INTO placement_questions 
 (question_text, question_type, options, correct_answer, points, category, difficulty, created_at, phenomenon) 
 VALUES
+('Choose the best option to complete the conversation: "Can I park here?"', 
+ 'multiple', '["Sorry, I did that.", "It''s the same place.", "Only for half an hour."]', 'C', 1, 'speaking', 1, now(), 'Appropriate situational response'),
 
+('Choose the best option to complete the conversation: "What colour will you paint the children''s bedroom?"', 
+ 'multiple', '["I hope it was right.", "We can''t decide.", "It wasn''t very difficult."]', 'B', 1, 'speaking', 1, now(), 'Contextual conversation response'),
+
+('Choose the best option to complete the conversation: "I can''t understand this email."', 
+ 'multiple', '["Would you like some help?", "Don''t you know?", "I suppose you can."]', 'A', 1, 'speaking', 1, now(), 'Offering help / polite suggestion'),
+
+('Choose the best option to complete the conversation: "I''d like two tickets for tomorrow night."', 
+ 'multiple', '["How much did you pay?", "Afternoon and evening.", "I''ll just check for you."]', 'C', 1, 'speaking', 1, now(), 'Service / polite response'),
+
+('Choose the best option to complete the conversation: "Shall we go to the gym now?"', 
+ 'multiple', '["I''m too tired.", "It''s very good.", "Not at all."]', 'A', 1, 'speaking', 1, now(), 'Expressing preference / refusal'),
+
+('Choose the correct word to complete the sentence: "His eyes were ...... bad that he couldn''t read the number plate of the car in front."', 
+ 'multiple', '["such", "too", "so", "very"]', 'C', 1, 'grammar', 2, now(), 'Result clause (so...that)'),
+
+('Choose the correct word to complete the sentence: "The company needs to decide ...... and for all what its position is on this point."', 
+ 'multiple', '["here", "once", "first", "finally"]', 'B', 1, 'vocabulary', 2, now(), 'Fixed expression (once and for all)'),
+
+('Choose the correct word to complete the sentence: "Don''t put your cup on the ...... of the table - someone will knock it off."', 
+ 'multiple', '["outside", "edge", "boundary", "border"]', 'B', 1, 'vocabulary', 1, now(), 'Word meaning (edge of an object)'),
+
+('Choose the correct word to complete the sentence: "I''m sorry - I didn''t ...... to disturb you."', 
+ 'multiple', '["hope", "think", "mean", "suppose"]', 'C', 1, 'grammar', 2, now(), 'Verb usage (mean to + infinitive)'),
+
+('Choose the correct word to complete the sentence: "The singer ended the concert ...... her most popular song."', 
+ 'multiple', '["by", "with", "in", "as"]', 'B', 1, 'grammar', 1, now(), 'Preposition use (end with)'),
+
+('Choose the correct word to complete the sentence: "Would you mind ...... these plates a wipe before putting them in the cupboard?"', 
+ 'multiple', '["making", "doing", "getting", "giving"]', 'D', 1, 'grammar', 2, now(), 'Collocation (give something a wipe)'),
+
+('Choose the correct word to complete the sentence: "I was looking forward ...... at the new restaurant, but it was closed."', 
+ 'multiple', '["to eat", "to have eaten", "to eating", "eating"]', 'C', 1, 'grammar', 3, now(), 'Gerund after preposition (look forward to + -ing)'),
+
+('Choose the correct word to complete the sentence: "...... tired Melissa is when she gets home from work, she always makes time to say goodnight to the children."', 
+ 'multiple', '["Whatever", "No matter how", "However much", "Although"]', 'B', 1, 'grammar', 3, now(), 'Concession clause (no matter how + adjective)'),
+
+('Choose the correct word to complete the sentence: "It was only ten days ago ...... she started her new job."', 
+ 'multiple', '["then", "since", "after", "that"]', 'D', 1, 'grammar', 2, now(), 'Relative clause (It was ... ago that ...)'),
+
+('Choose the correct word to complete the sentence: "The shop didn''t have the shoes I wanted, but they''ve ...... a pair specially for me."', 
+ 'multiple', '["booked", "ordered", "commanded", "asked"]', 'B', 1, 'vocabulary', 2, now(), 'Word choice (order vs. book)'),
+
+('Choose the correct word to complete the sentence: "Have you got time to discuss your work now or are you ...... to leave?"', 
+ 'multiple', '["thinking", "round", "planned", "about"]', 'D', 1, 'grammar', 2, now(), 'Preposition use (about to + verb)'),
+
+('Choose the correct word to complete the sentence: "She came to live here ...... a month ago."', 
+ 'multiple', '["quite", "beyond", "already", "almost"]', 'D', 1, 'grammar', 1, now(), 'Adverb of time (almost + time expression)'),
+
+('Choose the correct word to complete the sentence: "Once the plane is in the air, you can ...... your seat belts if you wish."', 
+ 'multiple', '["undress", "unfasten", "unlock", "untie"]', 'B', 1, 'vocabulary', 1, now(), 'Word meaning (unfasten a seat belt)'),
+
+('Choose the correct word to complete the sentence: "I left my last job because I had no ...... to travel."', 
+ 'multiple', '["place", "position", "opportunity", "possibility"]', 'C', 1, 'vocabulary', 2, now(), 'Word choice (opportunity to + verb)'),
+
+('Choose the correct word to complete the sentence: "It wasn''t a bad crash and ...... damage was done to my car."', 
+ 'multiple', '["little", "small", "light", "mere"]', 'A', 1, 'grammar', 2, now(), 'Quantifier (little + uncountable noun)'),
+
+('Choose the correct word to complete the sentence: "I''d rather you ...... to her why we can''t go."', 
+ 'multiple', '["would explain", "explained", "to explain", "will explain"]', 'B', 1, 'grammar', 3, now(), 'Subjunctive preference (I''d rather + past tense)'),
+
+('Choose the correct word to complete the sentence: "Before making a decision, the leader considered all ...... of the argument."', 
+ 'multiple', '["sides", "features", "perspectives", "shades"]', 'A', 1, 'vocabulary', 2, now(), 'Fixed expression (both/all sides of an argument)'),
+
+('Choose the correct word to complete the sentence: "This new printer is recommended as being ...... reliable."', 
+ 'multiple', '["greatly", "highly", "strongly", "readily"]', 'B', 1, 'vocabulary', 2, now(), 'Collocation (highly reliable)'),
+
+('Choose the correct word to complete the sentence: "When I realised I had dropped my gloves, I decided to ...... my steps."', 
+ 'multiple', '["retrace", "regress", "resume", "return"]', 'A', 1, 'vocabulary', 3, now(), 'Phrasal/verb meaning (retrace one''s steps)'),
+
+('Choose the correct word to complete the sentence: "Anne''s house is somewhere in the ...... of the railway station."', 
+ 'multiple', '["region", "quarter", "vicinity", "district"]', 'C', 1, 'vocabulary', 2, now(), 'Word meaning (vicinity = nearby area)');
+ 
 ('Choose the correct word to complete the sentence: "She ___ to the gym every day after work."', 
  'multiple', '["go", "goes", "going", "went"]', 'B', 1, 'vocabulary', 1, now(), 'Present Simple tense (verb form)'),
 
@@ -142,12 +227,3 @@ VALUES
  'multiple', '["Where are my documents?", "Hey, send me those papers!", "I was wondering if you could provide an update on the documents I requested.", "I need those docs ASAP!"]', 'C', 1, 'speaking', 4, now(), 'Register and tone (formality)');
 
 CREATE TABLE IF NOT EXISTS test_answers (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    test_result_id INTEGER REFERENCES test_results_level(id) ON DELETE CASCADE, -- <-- ΣΩΣΤΟ
-    question_id INTEGER,
-    selected_option VARCHAR(255),
-    correct_option VARCHAR(255),
-    is_correct BOOLEAN,
-    answered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
