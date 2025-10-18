@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"log"
+	"math"
 	"net/http"
 	"strconv"
 
@@ -152,10 +153,11 @@ func (h *Handler) SetupRouter(
 		}
 
 		// Function to get pct or nil
-		getPct := func(cat string) *float64 {
+		getPct := func(cat string) *int {
 			if total, ok := totalMap[cat]; ok && total > 0 {
 				pct := float64(correctMap[cat]) / float64(total) * 100
-				return &pct
+				rounded := int(math.Round(pct))
+				return &rounded
 			}
 			return nil
 		}
