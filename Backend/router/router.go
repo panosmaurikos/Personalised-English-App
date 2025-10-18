@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"log"
+	"math"
 	"net/http"
 	"strconv"
 
@@ -155,7 +156,8 @@ func (h *Handler) SetupRouter(
 		getPct := func(cat string) *float64 {
 			if total, ok := totalMap[cat]; ok && total > 0 {
 				pct := float64(correctMap[cat]) / float64(total) * 100
-				return &pct
+				rounded := math.Round(pct*100) / 100
+				return &rounded
 			}
 			return nil
 		}
