@@ -31,6 +31,13 @@ function Recommended() {
 
   return (
     <div className={styles.container}>
+      <button
+        className={styles.startBtn}
+        style={{ background: "#6c757d", marginBottom: "1rem" }}
+        onClick={() => navigate(-1)}
+      >
+        Back
+      </button>
       <div className={styles.header}>
         <img
           src="https://img.icons8.com/color/36/idea.png"

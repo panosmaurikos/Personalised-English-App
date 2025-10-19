@@ -19,6 +19,7 @@ const useContact = (handleToast) => {
   const handleContactSubmit = async (e) => {
     e.preventDefault();
 
+    // TODO: Implement form validation
     // Simulate a successful form submission
     // Replace this with an API call to send the form data to the backend
     // try {
