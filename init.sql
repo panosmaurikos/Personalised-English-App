@@ -15,17 +15,17 @@ CREATE TABLE IF NOT EXISTS password_resets (
 CREATE TABLE IF NOT EXISTS test_results_level (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    teacher_id INTEGER REFERENCES users(id) ON DELETE
-    SET NULL,
-        score REAL NOT NULL,
-        avg_response_time REAL,
-        vocabulary_pct REAL,
-        grammar_pct REAL,
-        reading_pct REAL,
-        listening_pct REAL,
-        difficulty INTEGER,
-        fuzzy_level VARCHAR(50),
-        taken_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    teacher_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    score REAL NOT NULL,
+    avg_response_time REAL,
+    vocabulary_pct REAL,
+    grammar_pct REAL,
+    reading_pct REAL,
+    listening_pct REAL,
+    difficulty INTEGER,
+    fuzzy_level VARCHAR(50),
+    test_type VARCHAR(32) NOT NULL DEFAULT 'regular',
+    taken_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 INSERT INTO users (username, email, password, role)
 VALUES (

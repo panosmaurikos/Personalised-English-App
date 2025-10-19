@@ -378,6 +378,7 @@ function Dashboard() {
                 <th>Score</th>
                 <th>Level</th>
                 <th>Avg Time</th>
+                <th>Type</th>
               </tr>
             </thead>
             <tbody>
@@ -387,6 +388,17 @@ function Dashboard() {
                   <td>{h.score.toFixed(2)}%</td>
                   <td>{h.level}</td>
                   <td>{h.avg_time.toFixed(2)}s</td>
+                  <td>
+                    {h.test_type === 'personalized' ? (
+                      <span className={styles.testTypePersonalized}>
+                        Personalized
+                      </span>
+                    ) : (
+                      <span className={styles.testTypeRegular}>
+                        Regular
+                      </span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

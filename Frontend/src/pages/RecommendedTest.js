@@ -48,6 +48,7 @@ function RecommendedTest() {
         score: (score / questions.length) * 100,
         avg_time: avgTime,
         answers: answersPayload,
+        test_type: "personalized"
       };
       fetch(`${process.env.REACT_APP_API_URL}/complete-test`, {
         method: "POST",

@@ -82,9 +82,10 @@ func (h *Handler) SetupRouter(
 
 	protectedRouter.HandleFunc("/complete-test", func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
-			Score   float64 `json:"score"`
-			AvgTime float64 `json:"avg_time"`
-			Answers []struct {
+			Score    float64 `json:"score"`
+			AvgTime  float64 `json:"avg_time"`
+			TestType string  `json:"test_type"`
+			Answers  []struct {
 				QuestionID     int    `json:"question_id"`
 				SelectedOption string `json:"selected_option"`
 				CorrectOption  string `json:"correct_option"`
@@ -169,14 +170,18 @@ func (h *Handler) SetupRouter(
 
 		// Insert test result with all fields
 		var testResultID int
+		testType := req.TestType
+		if testType == "" {
+			testType = "regular"
+		}
 		err = db.QueryRow(`
-        INSERT INTO test_results_level (
-			user_id, score, avg_response_time, vocabulary_pct, grammar_pct, 
-			reading_pct, listening_pct, difficulty, fuzzy_level
-		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		RETURNING id
-	`, userID, req.Score, req.AvgTime, vocabPct, grammarPct, readingPct, listeningPct, difficulty, level).Scan(&testResultID)
+			INSERT INTO test_results_level (
+			   user_id, score, avg_response_time, vocabulary_pct, grammar_pct, 
+			   reading_pct, listening_pct, difficulty, fuzzy_level, test_type
+		   )
+		   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		   RETURNING id
+	   `, userID, req.Score, req.AvgTime, vocabPct, grammarPct, readingPct, listeningPct, difficulty, level, testType).Scan(&testResultID)
 		if err != nil {
 			http.Error(w, `{"error": "Failed to save test result: `+err.Error()+`"}`, http.StatusInternalServerError)
 			return
@@ -454,11 +459,11 @@ func (h *Handler) SetupRouter(
 		}
 
 		rows, err := db.Query(`
-			SELECT id, score, avg_response_time, fuzzy_level, taken_at
-			FROM test_results_level
-			WHERE user_id = $1
-			ORDER BY taken_at DESC
-		`, userID)
+			   SELECT id, score, avg_response_time, fuzzy_level, test_type, taken_at
+			   FROM test_results_level
+			   WHERE user_id = $1
+			   ORDER BY taken_at DESC
+		   `, userID)
 		if err != nil {
 			http.Error(w, `{"error": "Failed to fetch history: `+err.Error()+`"}`, http.StatusInternalServerError)
 			return
@@ -472,9 +477,10 @@ func (h *Handler) SetupRouter(
 				Score           float64
 				AvgResponseTime float64
 				FuzzyLevel      string
+				TestType        string
 				TakenAt         string
 			}
-			if err := rows.Scan(&h.ID, &h.Score, &h.AvgResponseTime, &h.FuzzyLevel, &h.TakenAt); err != nil {
+			if err := rows.Scan(&h.ID, &h.Score, &h.AvgResponseTime, &h.FuzzyLevel, &h.TestType, &h.TakenAt); err != nil {
 				http.Error(w, `{"error": "Failed to scan history: `+err.Error()+`"}`, http.StatusInternalServerError)
 				return
 			}
@@ -483,6 +489,7 @@ func (h *Handler) SetupRouter(
 				"score":        h.Score,
 				"avg_time":     h.AvgResponseTime,
 				"level":        h.FuzzyLevel,
+				"test_type":    h.TestType,
 				"completed_at": h.TakenAt,
 			})
 		}

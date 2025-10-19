@@ -36,6 +36,7 @@ function Tests() {
         score: (getScore() / QUESTIONS.length) * 100,
         avg_time: getAvgTime(),
         answers: answersPayload,
+        test_type: "regular"
       };
       fetch(`${process.env.REACT_APP_API_URL}/complete-test`, {
         method: "POST",
