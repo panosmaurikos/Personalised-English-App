@@ -1,88 +1,94 @@
-import { useState } from 'react';
-import '../../css/Login.css';
+import { useState } from "react";
+import "../../css/Login.css";
 
 const Login = ({ onToggle, login, handleToast }) => {
-  const [form, setForm] = useState({ username: '', password: '' });
-  const [error, setError] = useState('');
+  const [form, setForm] = useState({ username: "", password: "" });
+  const [error, setError] = useState("");
   const [showForgot, setShowForgot] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotEmail, setForgotEmail] = useState("");
   const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState('');
-  const [newPassword, setNewPassword] = useState('');
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-    setError('');
+    setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.username) {
-      showError('Username or Email is required');
+      showError("Username or Email is required");
       return;
     }
     if (!form.password) {
-      showError('Password is required');
+      showError("Password is required");
       return;
     }
     try {
       await login(form);
-      setForm({ username: '', password: '' });
-      setError('');
+      setForm({ username: "", password: "" });
+      setError("");
     } catch (err) {
-      showError('Invalid credentials');
+      showError("Invalid credentials");
     }
   };
 
   const showError = (msg) => {
     setError(msg);
-    setTimeout(() => setError(''), 3500);
+    setTimeout(() => setError(""), 3500);
   };
 
   // Forgot password handlers
   const handleForgotSubmit = async (e) => {
     e.preventDefault();
     if (!forgotEmail) {
-      showError('Email is required');
+      showError("Email is required");
       return;
     }
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: forgotEmail }),
-      });
-      if (!res.ok) throw new Error('Failed to send code');
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/forgot-password`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: forgotEmail }),
+        }
+      );
+      if (!res.ok) throw new Error("Failed to send code");
       setOtpSent(true);
-      showError('');
-      handleToast('A reset code was sent to your email.', 'info');
+      showError("");
+      handleToast("A reset code was sent to your email.", "info");
     } catch {
-      showError('Failed to send reset code. Please check your email.');
+      showError("Failed to send reset code. Please check your email.");
     }
   };
 
   const handleResetSubmit = async (e) => {
     e.preventDefault();
     if (!otp || !newPassword) {
-      showError('Code and new password are required');
+      showError("Code and new password are required");
       return;
     }
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/reset-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: otp, new_password: newPassword }),
-      });
-      if (!res.ok) throw new Error('Failed to reset password');
-      showError('');
-      handleToast('Password reset successful! You can now log in.', 'success');
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/reset-password`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: otp, new_password: newPassword }),
+        }
+      );
+      if (!res.ok) throw new Error("Failed to reset password");
+      showError("");
+      handleToast("Password reset successful! You can now log in.", "success");
       setShowForgot(false);
       setOtpSent(false);
-      setForgotEmail('');
-      setOtp('');
-      setNewPassword('');
+      setForgotEmail("");
+      setOtp("");
+      setNewPassword("");
     } catch {
-      showError('Invalid code or expired. Try again.');
+      showError("Invalid code or expired. Try again.");
     }
   };
 
@@ -90,7 +96,10 @@ const Login = ({ onToggle, login, handleToast }) => {
   if (showForgot) {
     return (
       <div className="login-bg">
-        <form className="text-center w-100" onSubmit={otpSent ? handleResetSubmit : handleForgotSubmit}>
+        <form
+          className="text-center w-100"
+          onSubmit={otpSent ? handleResetSubmit : handleForgotSubmit}
+        >
           {error && (
             <div className="alert alert-danger py-2 mb-3" role="alert">
               {error}
@@ -99,8 +108,8 @@ const Login = ({ onToggle, login, handleToast }) => {
           <h2 className="login-title mb-2">Forgot Password</h2>
           <p className="text-muted small mb-4">
             {otpSent
-              ? 'Enter the code sent to your email and your new password.'
-              : 'Enter your email to receive a reset code.'}
+              ? "Enter the code sent to your email and your new password."
+              : "Enter your email to receive a reset code."}
           </p>
           {!otpSent ? (
             <>
@@ -111,10 +120,16 @@ const Login = ({ onToggle, login, handleToast }) => {
                   className="form-control form-control-lg shadow-sm login-input"
                   placeholder="Email"
                   value={forgotEmail}
-                  onChange={e => { setForgotEmail(e.target.value); setError(''); }}
+                  onChange={(e) => {
+                    setForgotEmail(e.target.value);
+                    setError("");
+                  }}
                 />
               </div>
-              <button type="submit" className="btn btn-primary btn-lg w-100 shadow-sm login-btn">
+              <button
+                type="submit"
+                className="btn btn-primary btn-lg w-100 shadow-sm login-btn"
+              >
                 Send Code
               </button>
             </>
@@ -127,7 +142,10 @@ const Login = ({ onToggle, login, handleToast }) => {
                   className="form-control form-control-lg shadow-sm login-input"
                   placeholder="Reset Code"
                   value={otp}
-                  onChange={e => { setOtp(e.target.value); setError(''); }}
+                  onChange={(e) => {
+                    setOtp(e.target.value);
+                    setError("");
+                  }}
                 />
               </div>
               <div className="mb-3">
@@ -137,23 +155,33 @@ const Login = ({ onToggle, login, handleToast }) => {
                   className="form-control form-control-lg shadow-sm login-input"
                   placeholder="New Password"
                   value={newPassword}
-                  onChange={e => { setNewPassword(e.target.value); setError(''); }}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value);
+                    setError("");
+                  }}
                 />
               </div>
-              <button type="submit" className="btn btn-primary btn-lg w-100 shadow-sm login-btn">
+              <button
+                type="submit"
+                className="btn btn-primary btn-lg w-100 shadow-sm login-btn"
+              >
                 Reset Password
               </button>
             </>
           )}
           <div className="mt-3 text-center">
-            <button type="button" className="btn btn-link small" onClick={() => {
-              setShowForgot(false);
-              setOtpSent(false);
-              setForgotEmail('');
-              setOtp('');
-              setNewPassword('');
-              setError('');
-            }}>
+            <button
+              type="button"
+              className="btn btn-link small"
+              onClick={() => {
+                setShowForgot(false);
+                setOtpSent(false);
+                setForgotEmail("");
+                setOtp("");
+                setNewPassword("");
+                setError("");
+              }}
+            >
               Back to Login
             </button>
           </div>
@@ -166,20 +194,17 @@ const Login = ({ onToggle, login, handleToast }) => {
     <div className="login-bg">
       <form className="text-center w-100" onSubmit={handleSubmit}>
         {error && (
-          <div className="alert alert-danger py-2 mb-3 login-error-alert" role="alert">
+          <div
+            className="alert alert-danger py-2 mb-3 login-error-alert"
+            role="alert"
+          >
             {error}
           </div>
         )}
 
         {/* Logo and title */}
-        <img
-          src="/book.png"
-          alt="Education"
-          className="mb-3 login-img"
-        />
-        <h2 className="login-title mb-2">
-          Welcome Back!
-        </h2>
+        <img src="/book.png" alt="Education" className="mb-3 login-img" />
+        <h2 className="login-title mb-2">Welcome Back!</h2>
         <p className="text-muted small mb-4">
           Log in to start your English learning adventure!
         </p>
@@ -230,7 +255,7 @@ const Login = ({ onToggle, login, handleToast }) => {
         {/* Sign-up link */}
         <div className="mt-4 text-center">
           <span className="text-muted small">
-            New to our platform?{' '}
+            New to our platform?{" "}
             <button
               type="button"
               className="login-signup-btn fw-bold"

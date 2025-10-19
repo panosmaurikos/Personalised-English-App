@@ -11,7 +11,7 @@
   font-size: 2.5rem;
   color: #dc3545;
   margin-bottom: 1.5rem;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .error {
@@ -20,7 +20,6 @@
   margin-bottom: 1rem;
 }
 
-/* Toolbar */
 .toolbar {
   display: grid;
   grid-template-columns: 1fr 200px auto;
@@ -35,11 +34,11 @@
   border-radius: 10px;
   background: #fff;
   outline: none;
-  transition: box-shadow .2s, border-color .2s;
+  transition: box-shadow 0.2s, border-color 0.2s;
 }
 .searchInput:focus {
   border-color: #0d6efd;
-  box-shadow: 0 0 0 0.25rem rgba(13,110,253,0.15);
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
 }
 
 .filterSelect {
@@ -49,7 +48,6 @@
   background: #fff;
 }
 
-/* Create button reused */
 .createBtn {
   display: inline-block;
   margin: 0;
@@ -65,7 +63,7 @@
 }
 .createBtn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(13,110,253,0.25);
+  box-shadow: 0 6px 16px rgba(13, 110, 253, 0.25);
 }
 
 /* Grid for cards */
@@ -80,19 +78,18 @@
   text-align: center;
   color: #6c757d;
   padding: 2rem;
-  background: rgba(255,255,255,0.6);
+  background: rgba(255, 255, 255, 0.6);
   border: 1px dashed #ced4da;
   border-radius: 12px;
 }
 
-/* Modal */
 .modalOverlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(15,23,42,0.55);
+  background: rgba(15, 23, 42, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -108,7 +105,7 @@
   width: 92%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 18px 60px rgba(0,0,0,0.25);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.25);
   animation: slideUp 0.25s ease;
 }
 
@@ -129,7 +126,9 @@
   transition: background 0.3s;
   margin-top: 1rem;
 }
-.closeBtn:hover { background: #5a6268; }
+.closeBtn:hover {
+  background: #5a6268;
+}
 
 /* Stats placeholders */
 .statsGrid {
@@ -145,7 +144,7 @@
   padding: 1rem;
   color: #495057;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 .sectionTitle {
   font-size: 1.1rem;
@@ -164,13 +163,22 @@
   text-align: center;
 }
 
-/* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { transform: translateY(40px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }

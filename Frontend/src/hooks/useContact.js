@@ -17,8 +17,9 @@ const useContact = (handleToast) => {
 
   // Function to handle contact form submission
   const handleContactSubmit = async (e) => {
-    e.preventDefault(); // Prevent the default form submission behavior
+    e.preventDefault();
 
+    // TODO: Implement form validation
     // Simulate a successful form submission
     // Replace this with an API call to send the form data to the backend
     // try {

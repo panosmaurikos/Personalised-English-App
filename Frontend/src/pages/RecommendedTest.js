@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../css/Recommended.module.css";
 
@@ -20,6 +20,36 @@ function RecommendedTest() {
       .then((data) => setQuestions(data))
       .catch(() => setQuestions([]));
   }, []);
+  useEffect(() => {
+    if (
+      showResult &&
+      questions.length > 0 &&
+      answers.length === questions.length
+    ) {
+      const token = localStorage.getItem("jwt");
+      // Make array with correct correct_option for each question
+      const answersPayload = questions.map((q, i) => ({
+        question_id: q.id,
+        selected_option: answers[i] || "",
+        correct_option: getCorrectOptionString(q),
+      }));
+      const payload = {
+        score: (score / questions.length) * 100,
+        avg_time: 0, // Optional: add avg_time calculation
+        answers: answersPayload,
+      };
+      fetch(`${process.env.REACT_APP_API_URL}/complete-test`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      }).then(() => {
+        // Optional: reload dashboard, show message, etc
+      });
+    }
+  }, [showResult, questions, answers, score]);
 
   // Play TTS for listening questions
   const playTTS = useCallback((text) => {
@@ -35,15 +65,40 @@ function RecommendedTest() {
     if (step < questions.length - 1) {
       setStep((s) => s + 1);
     } else {
-      // Υπολογισμός σκορ
       let correct = 0;
+      let mistakes = [];
       questions.forEach((q, i) => {
-        if (answers[i] === q.answer) correct++;
+        const correctStr = getCorrectOptionString(q);
+        if (answers[i] === correctStr) {
+          correct++;
+        } else {
+          mistakes.push({
+            question: q.question,
+            yourAnswer: answers[i],
+            correctAnswer: correctStr,
+            category: q.category,
+            phenomenon: q.phenomenon,
+          });
+        }
       });
+      console.log("Mistakes:", mistakes);
       setScore(correct);
       setShowResult(true);
     }
   };
+  function getCorrectOptionString(q) {
+    // If correctAnswer is "A", "B", "C", "D" and options exist, get the string
+    if (
+      typeof q.answer === "string" &&
+      ["A", "B", "C", "D"].includes(q.answer) &&
+      Array.isArray(q.options)
+    ) {
+      const idx = ["A", "B", "C", "D"].indexOf(q.answer);
+      return q.options[idx];
+    }
+    // If answer is already string, return it
+    return q.answer;
+  }
 
   if (questions.length === 0)
     return <div className={styles.container}>Loading...</div>;
@@ -54,7 +109,10 @@ function RecommendedTest() {
         <div className={styles.resultScore}>
           Score: {score} / {questions.length}
         </div>
-        <button className={styles.startBtn} onClick={() => navigate("/dashboard")}>
+        <button
+          className={styles.startBtn}
+          onClick={() => navigate("/dashboard")}
+        >
           Back to Dashboard
         </button>
       </div>
@@ -65,7 +123,10 @@ function RecommendedTest() {
   return (
     <div className={styles.container}>
       <div className={styles.qTitle}>
-        Q{step + 1} <span>({q.category}, diff: {q.difficulty})</span>
+        Q{step + 1}{" "}
+        <span>
+          ({q.category}, diff: {q.difficulty})
+        </span>
       </div>
       <div style={{ marginBottom: 10 }}>
         {q.question}
@@ -76,13 +137,14 @@ function RecommendedTest() {
             disabled={isListening}
             onClick={() =>
               playTTS(
-                q.tts && typeof q.tts === "string"
-                  ? q.tts
-                  : q.question || ""
+                q.tts && typeof q.tts === "string" ? q.tts : q.question || ""
               )
             }
           >
-            <span role="img" aria-label="speaker">🔊</span> Play Sentence
+            <span role="img" aria-label="speaker">
+              🔊
+            </span>{" "}
+            Play Sentence
           </button>
         )}
       </div>

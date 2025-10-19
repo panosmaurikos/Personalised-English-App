@@ -1,11 +1,12 @@
-html, body {
+html,
+body {
   width: 100%;
   overflow-x: hidden;
 }
 
 body {
   min-height: 200vh;
-  padding-top: 70px; /* Adjust this value to match your navbar height */
+  padding-top: 70px;
 }
 
 section {
@@ -41,21 +42,19 @@ section {
   }
 }
 
-/* Ensure consistent container styling */
 .container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 15px;
 }
 
-/* Smooth transitions for buttons */
 .btn {
   transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .navbar {
@@ -99,7 +98,7 @@ section {
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 1;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
   animation: pulse 3s ease-in-out infinite;
 }
 
@@ -137,7 +136,7 @@ section {
   background: linear-gradient(135deg, #f0f4ff, #e0e7ff);
   border-radius: 15px;
   padding: 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .section-contact-input {
@@ -150,9 +149,8 @@ section {
   padding: 10px;
 }
 
-/* App.css */
 .auth-modal-backdrop {
-  background: rgba(0,0,0,0.25);
+  background: rgba(0, 0, 0, 0.25);
   z-index: 9999;
 }
 
@@ -160,25 +158,35 @@ section {
   background: #fff;
   min-width: 400px;
   max-width: 90vw;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   border-radius: 1.5rem; /* matches rounded-4 */
   padding: 0;
 }
 
 @keyframes pulse {
-  0%, 100% { box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
-  50% { box-shadow: 0 0 40px 10px #ff8e5333; }
+  0%,
+  100% {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 40px 10px #ff8e5333;
+  }
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 .section-about-inner {
   background: #fff;
   border-radius: 20px;
-  box-shadow: 0 4px 14px 0 rgba(102,126,234,0.10);
+  box-shadow: 0 4px 14px 0 rgba(102, 126, 234, 0.1);
   padding: 40px 32px;
   min-height: 340px;
 }
@@ -187,7 +195,7 @@ section {
   background: linear-gradient(135deg, #ff6b6b22 0%, #ff8e5322 100%);
   border-radius: 20px;
   padding: 16px;
-  box-shadow: 0 4px 14px 0 rgba(102,126,234,0.10);
+  box-shadow: 0 4px 14px 0 rgba(102, 126, 234, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -198,7 +206,7 @@ section {
   width: 100%;
   max-height: 340px;
   object-fit: cover;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
 .about-list {
@@ -231,7 +239,7 @@ section {
   background: #fff;
   border: none;
   border-radius: 50%;
-  box-shadow: 0 4px 16px rgba(220,53,69,0.15);
+  box-shadow: 0 4px 16px rgba(220, 53, 69, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -240,7 +248,7 @@ section {
   transition: box-shadow 0.2s;
 }
 .contact-fab:hover {
-  box-shadow: 0 8px 24px rgba(220,53,69,0.25);
+  box-shadow: 0 8px 24px rgba(220, 53, 69, 0.25);
   background: #ffeaea;
 }
 
@@ -248,7 +256,7 @@ section {
 .contact-popup-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.25);
+  background: rgba(0, 0, 0, 0.25);
   z-index: 2100;
   display: flex;
   align-items: flex-end;
@@ -259,7 +267,7 @@ section {
 .contact-popup {
   background: #fff;
   border-radius: 20px 20px 0 0;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
   padding: 32px 24px 24px 24px;
   width: 100%;
   max-width: 370px;
@@ -269,8 +277,14 @@ section {
 }
 
 @keyframes popupIn {
-  from { transform: translateY(100px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .contact-popup-close {
@@ -281,7 +295,7 @@ section {
   border: none;
   font-size: 1.5rem;
   font-weight: bold;
-  color: #dc3545; /* Bootstrap danger */
+  color: #dc3545;
   cursor: pointer;
   z-index: 9999;
   transition: color 0.2s ease;

@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import useTestLogic from "../hooks/useTestLogic";
 import styles from "../css/Tests.module.css";
-import { useAuth } from "../hooks/useAuth";
 
 function Tests() {
   const {
@@ -19,7 +18,7 @@ function Tests() {
   } = useTestLogic();
   const [fuzzyLevel, setFuzzyLevel] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState(""); // State for error messages
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -71,7 +70,15 @@ function Tests() {
           setIsSubmitting(false);
         });
     }
-  }, [showResult, QUESTIONS, answers, getScore, getAvgTime, getCorrectOptionValue]);
+  }, [
+    showResult,
+    QUESTIONS,
+    answers,
+    getScore,
+    getAvgTime,
+    getCorrectOptionValue,
+    isSubmitting,
+  ]);
 
   const typeBadge = (type) => {
     switch (type) {
@@ -88,13 +95,16 @@ function Tests() {
     }
   };
 
-  const capitalize = (str) => (str && typeof str === "string" ? str.charAt(0).toUpperCase() + str.slice(1) : "");
+  const capitalize = (str) =>
+    str && typeof str === "string"
+      ? str.charAt(0).toUpperCase() + str.slice(1)
+      : "";
 
   return (
     <div className={styles["test-container"]}>
-      <button 
-        className={styles["test-retry-btn"]} // Reusing test-retry-btn style for consistency, adjust if needed
-        style={{ background: '#6c757d', marginBottom: '1rem' }} 
+      <button
+        className={styles["test-retry-btn"]} // Reusing test-retry-btn style for consistency
+        style={{ background: "#6c757d", marginBottom: "1rem" }}
         onClick={() => navigate(-1)}
       >
         Back
@@ -102,7 +112,8 @@ function Tests() {
       <div className={styles["test-card"]}>
         <h2 className={styles["test-title"]}>Quick English Level Test</h2>
         <p className={styles["test-desc"]}>
-          Answer a few questions to discover your English level and get personalized recommendations!
+          Answer a few questions to discover your English level and get
+          personalized recommendations!
         </p>
         {error && <div className="alert alert-danger">{error}</div>}
         {!showResult ? (
@@ -110,18 +121,28 @@ function Tests() {
             <div>
               <div className={styles["test-question-block"]}>
                 <div className={styles["test-header-row"]}>
-                  <span className={`${styles["test-badge"]} ${styles["test-question-badge"]}`}>
+                  <span
+                    className={`${styles["test-badge"]} ${styles["test-question-badge"]}`}
+                  >
                     Question {step + 1} of {QUESTIONS.length}
                   </span>
-                  <span className={`badge bg-${typeBadge(QUESTIONS[step].type)} ${styles["test-type-badge"]}`}>
+                  <span
+                    className={`badge bg-${typeBadge(QUESTIONS[step].type)} ${
+                      styles["test-type-badge"]
+                    }`}
+                  >
                     {capitalize(QUESTIONS[step].type)}
                   </span>
                 </div>
-                <h5 className={`${styles["test-question"]} ${styles["test-instruction"]}`}>
+                <h5
+                  className={`${styles["test-question"]} ${styles["test-instruction"]}`}
+                >
                   {QUESTIONS[step].instruction || "Choose the correct answer"}
                 </h5>
                 {QUESTIONS[step].question && (
-                  <div className={styles["test-question-detail"]}>{QUESTIONS[step].question}</div>
+                  <div className={styles["test-question-detail"]}>
+                    {QUESTIONS[step].question}
+                  </div>
                 )}
                 {QUESTIONS[step].category === "listening" && (
                   <div className={styles["test-audio-row"]}>
@@ -130,7 +151,8 @@ function Tests() {
                       type="button"
                       onClick={() =>
                         playTTS(
-                          QUESTIONS[step].tts && typeof QUESTIONS[step].tts === "string"
+                          QUESTIONS[step].tts &&
+                            typeof QUESTIONS[step].tts === "string"
                             ? QUESTIONS[step].tts
                             : QUESTIONS[step].question || ""
                         )
@@ -161,20 +183,31 @@ function Tests() {
           )
         ) : (
           <div className={styles["test-result"]}>
-            <h3 className={styles["test-level"]}>Your Level: {fuzzyLevel || "Calculating..."}</h3>
+            <h3 className={styles["test-level"]}>
+              Your Level: {fuzzyLevel || "Calculating..."}
+            </h3>
             <div className={styles["test-score"]}>
               <span>
                 Score: {getScore()} / {QUESTIONS.length}
               </span>
             </div>
             <p className={styles["test-feedback"]}>
-              {getScore() >= 10 && "Excellent! You have a strong command of English."}
-              {getScore() >= 7 && getScore() < 10 && "Great job! You have a good understanding of English."}
-              {getScore() >= 4 && getScore() < 7 && "Not bad! You have a basic understanding of English."}
-              {getScore() < 4 && "Keep trying! You might benefit from some review."}
+              {getScore() >= 10 &&
+                "Excellent! You have a strong command of English."}
+              {getScore() >= 7 &&
+                getScore() < 10 &&
+                "Great job! You have a good understanding of English."}
+              {getScore() >= 4 &&
+                getScore() < 7 &&
+                "Not bad! You have a basic understanding of English."}
+              {getScore() < 4 &&
+                "Keep trying! You might benefit from some review."}
             </p>
             <div className="text-center">
-              <button className={styles["test-retry-btn"]} onClick={restartTest}>
+              <button
+                className={styles["test-retry-btn"]}
+                onClick={restartTest}
+              >
                 Retake Test
               </button>
             </div>

@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/lib/pq"
 	"github.com/panosmaurikos/personalisedenglish/backend/api"
-	"github.com/panosmaurikos/personalisedenglish/backend/feedback" // <--- ΠΡΟΣΘΗΚΗ IMPORT
+	"github.com/panosmaurikos/personalisedenglish/backend/feedback"
 	"github.com/panosmaurikos/personalisedenglish/backend/fuzzylogic"
 	"github.com/panosmaurikos/personalisedenglish/backend/models"
 	"github.com/panosmaurikos/personalisedenglish/backend/services"
@@ -156,7 +156,7 @@ func (h *Handler) SetupRouter(
 		getPct := func(cat string) *int {
 			if total, ok := totalMap[cat]; ok && total > 0 {
 				pct := float64(correctMap[cat]) / float64(total) * 100
-				rounded := int(math.Round(pct))
+				rounded := math.Round(pct*100) / 100
 				return &rounded
 			}
 			return nil
@@ -171,12 +171,12 @@ func (h *Handler) SetupRouter(
 		var testResultID int
 		err = db.QueryRow(`
         INSERT INTO test_results_level (
-            user_id, score, avg_response_time, vocabulary_pct, grammar_pct, 
-            reading_pct, listening_pct, difficulty, fuzzy_level
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        RETURNING id
-    `, userID, req.Score, req.AvgTime, vocabPct, grammarPct, readingPct, listeningPct, difficulty, level).Scan(&testResultID)
+			user_id, score, avg_response_time, vocabulary_pct, grammar_pct, 
+			reading_pct, listening_pct, difficulty, fuzzy_level
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		RETURNING id
+	`, userID, req.Score, req.AvgTime, vocabPct, grammarPct, readingPct, listeningPct, difficulty, level).Scan(&testResultID)
 		if err != nil {
 			http.Error(w, `{"error": "Failed to save test result: `+err.Error()+`"}`, http.StatusInternalServerError)
 			return
@@ -234,6 +234,43 @@ func (h *Handler) SetupRouter(
 		json.NewEncoder(w).Encode(mistakes)
 	}).Methods("GET")
 
+	// Νέο endpoint για λάθη ανά phenomenon
+	protectedRouter.HandleFunc("/user-phenomenon-mistakes", func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := r.Context().Value("userID").(int)
+		if !ok || userID == 0 {
+			http.Error(w, `{"error": "User ID not found in context"}`, http.StatusUnauthorized)
+			return
+		}
+		rows, err := db.Query(`
+			SELECT pq.phenomenon, COUNT(*) as mistake_count
+			FROM test_answers ta
+			JOIN placement_questions pq ON ta.question_id = pq.id
+			WHERE ta.user_id = $1 AND ta.is_correct = FALSE AND pq.phenomenon IS NOT NULL
+			GROUP BY pq.phenomenon
+			ORDER BY mistake_count DESC
+			LIMIT 5
+		`, userID)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to fetch phenomenon mistakes: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+		var mistakes []map[string]interface{}
+		for rows.Next() {
+			var phenomenon string
+			var count int
+			if err := rows.Scan(&phenomenon, &count); err != nil {
+				http.Error(w, `{"error": "Failed to scan mistakes"}`, http.StatusInternalServerError)
+				return
+			}
+			mistakes = append(mistakes, map[string]interface{}{
+				"phenomenon": phenomenon,
+				"count":      count,
+			})
+		}
+		json.NewEncoder(w).Encode(mistakes)
+	}).Methods("GET")
+
 	protectedRouter.HandleFunc("/recommended-questions", func(w http.ResponseWriter, r *http.Request) {
 		userID, ok := r.Context().Value("userID").(int)
 		if !ok || userID == 0 {
@@ -257,7 +294,70 @@ func (h *Handler) SetupRouter(
 			return
 		}
 
-		// Φέρε misconceptions για το τελευταίο test (π.χ. ["grammar", "vocabulary"])
+		// 1. Φέρε top phenomena με τα περισσότερα λάθη
+		var phenomena []string
+		rows, err := db.Query(`
+			SELECT pq.phenomenon
+			FROM test_answers ta
+			JOIN placement_questions pq ON ta.question_id = pq.id
+			WHERE ta.user_id = $1 AND ta.is_correct = FALSE AND pq.phenomenon IS NOT NULL
+			GROUP BY pq.phenomenon
+			ORDER BY COUNT(*) DESC
+			LIMIT 2
+		`, userID)
+		if err == nil {
+			for rows.Next() {
+				var p string
+				_ = rows.Scan(&p)
+				phenomena = append(phenomena, p)
+			}
+			rows.Close()
+		}
+
+		var questions []map[string]interface{}
+		// 2. Φέρε ερωτήσεις με βάση τα phenomena
+		if len(phenomena) > 0 {
+			rows, err := db.Query(`
+				SELECT id, question_text, question_type, options, correct_answer, points, category, difficulty, phenomenon
+				FROM placement_questions
+				WHERE phenomenon = ANY($1)
+				ORDER BY RANDOM()
+				LIMIT 4
+			`, pq.Array(phenomena))
+			if err == nil {
+				for rows.Next() {
+					var q struct {
+						ID            int
+						QuestionText  string
+						QuestionType  string
+						Options       []byte
+						CorrectAnswer string
+						Points        int
+						Category      string
+						Difficulty    int
+						Phenomenon    string
+					}
+					if err := rows.Scan(&q.ID, &q.QuestionText, &q.QuestionType, &q.Options, &q.CorrectAnswer, &q.Points, &q.Category, &q.Difficulty, &q.Phenomenon); err == nil {
+						var opts []string
+						_ = json.Unmarshal(q.Options, &opts)
+						questions = append(questions, map[string]interface{}{
+							"id":         q.ID,
+							"question":   q.QuestionText,
+							"type":       q.QuestionType,
+							"options":    opts,
+							"answer":     q.CorrectAnswer,
+							"points":     q.Points,
+							"category":   q.Category,
+							"difficulty": q.Difficulty,
+							"phenomenon": q.Phenomenon,
+						})
+					}
+				}
+				rows.Close()
+			}
+		}
+
+		// Συνέχισε με misconceptions/top categories όπως πριν
 		misconceptions, err := feedback.DetectMisconceptions(db, testID)
 		categories := []string{}
 		if err == nil && len(misconceptions) > 0 {
@@ -265,17 +365,16 @@ func (h *Handler) SetupRouter(
 				categories = append(categories, m.Category)
 			}
 		}
-		// Αν δεν έχει misconceptions, πάρε top λάθος κατηγορίες από το ιστορικό
 		if len(categories) == 0 {
 			rows, err := db.Query(`
-			SELECT pq.category
-			FROM test_answers ta
-			JOIN placement_questions pq ON ta.question_id = pq.id
-			WHERE ta.user_id = $1 AND ta.is_correct = FALSE
-			GROUP BY pq.category
-			ORDER BY COUNT(*) DESC
-			LIMIT 2
-		`, userID)
+				SELECT pq.category
+				FROM test_answers ta
+				JOIN placement_questions pq ON ta.question_id = pq.id
+				WHERE ta.user_id = $1 AND ta.is_correct = FALSE
+				GROUP BY pq.category
+				ORDER BY COUNT(*) DESC
+				LIMIT 2
+			`, userID)
 			if err == nil {
 				for rows.Next() {
 					var category string
@@ -297,18 +396,17 @@ func (h *Handler) SetupRouter(
 			difficultyMin, difficultyMax = 3, 5
 		}
 
-		var questions []map[string]interface{}
+		// Φέρε επιπλέον ερωτήσεις από categories
 		if len(categories) > 0 {
 			rows, err := db.Query(`
-			SELECT id, question_text, question_type, options, correct_answer, points, category, difficulty
-			FROM placement_questions
-			WHERE category = ANY($1)
-			  AND difficulty BETWEEN $2 AND $3
-			ORDER BY RANDOM()
-			LIMIT 10
-		`, pq.Array(categories), difficultyMin, difficultyMax)
+				SELECT id, question_text, question_type, options, correct_answer, points, category, difficulty, phenomenon
+				FROM placement_questions
+				WHERE category = ANY($1)
+				  AND difficulty BETWEEN $2 AND $3
+				ORDER BY RANDOM()
+				LIMIT 6
+			`, pq.Array(categories), difficultyMin, difficultyMax)
 			if err == nil {
-				defer rows.Close()
 				for rows.Next() {
 					var q struct {
 						ID            int
@@ -319,8 +417,9 @@ func (h *Handler) SetupRouter(
 						Points        int
 						Category      string
 						Difficulty    int
+						Phenomenon    string
 					}
-					if err := rows.Scan(&q.ID, &q.QuestionText, &q.QuestionType, &q.Options, &q.CorrectAnswer, &q.Points, &q.Category, &q.Difficulty); err == nil {
+					if err := rows.Scan(&q.ID, &q.QuestionText, &q.QuestionType, &q.Options, &q.CorrectAnswer, &q.Points, &q.Category, &q.Difficulty, &q.Phenomenon); err == nil {
 						var opts []string
 						_ = json.Unmarshal(q.Options, &opts)
 						questions = append(questions, map[string]interface{}{
@@ -332,9 +431,11 @@ func (h *Handler) SetupRouter(
 							"points":     q.Points,
 							"category":   q.Category,
 							"difficulty": q.Difficulty,
+							"phenomenon": q.Phenomenon,
 						})
 					}
 				}
+				rows.Close()
 			}
 		}
 		if len(questions) == 0 {
@@ -388,7 +489,7 @@ func (h *Handler) SetupRouter(
 		json.NewEncoder(w).Encode(history)
 	}).Methods("GET")
 
-	// NEW: Misconception Detection Endpoint
+	// Misconceptions endpoint (όπως πριν)
 	protectedRouter.HandleFunc("/misconceptions/{testID}", func(w http.ResponseWriter, r *http.Request) {
 		userID, ok := r.Context().Value("userID").(int)
 		if !ok {
@@ -397,13 +498,12 @@ func (h *Handler) SetupRouter(
 		}
 
 		vars := mux.Vars(r)
-		testID, err := strconv.Atoi(vars["testID"]) // Προσθήκη ελέγχου σφάλματος
+		testID, err := strconv.Atoi(vars["testID"])
 		if err != nil {
 			http.Error(w, `{"error": "Invalid test ID"}`, http.StatusBadRequest)
 			return
 		}
 
-		// Verify the test belongs to the user
 		var testUserID int
 		err = db.QueryRow("SELECT user_id FROM test_results_level WHERE id = $1", testID).Scan(&testUserID)
 		if err != nil {
@@ -419,7 +519,6 @@ func (h *Handler) SetupRouter(
 			return
 		}
 
-		// Use the feedback package to detect misconceptions
 		misconceptions, err := feedback.DetectMisconceptions(db, testID)
 		if err != nil {
 			log.Printf("Error detecting misconceptions: %v", err)
@@ -431,6 +530,7 @@ func (h *Handler) SetupRouter(
 		json.NewEncoder(w).Encode(misconceptions)
 	}).Methods("GET")
 
+	// -- Teacher routes (όπως πριν) --
 	teacherRouter := r.PathPrefix("/teacher").Subrouter()
 	teacherRouter.Use(api.TeacherOnlyMiddleware)
 

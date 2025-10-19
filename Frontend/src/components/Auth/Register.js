@@ -1,20 +1,20 @@
-import { useState } from 'react';
-import '../../css/Register.css';
+import { useState } from "react";
+import "../../css/Register.css";
 
 const Register = ({ onToggle, register, handleToast }) => {
   // State to manage the registration form inputs
   const [form, setForm] = useState({
-    username: '',
-    email: '',
-    password: '',
-    role: '',
+    username: "",
+    email: "",
+    password: "",
+    role: "",
   });
-  const [error, setError] = useState(''); // new state for error
+  const [error, setError] = useState(""); // new state for error
 
   // Handle input changes and update the form state
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-    setError(''); // clear error when changing input
+    setError(""); // clear error when changing input
   };
 
   // Handle form submission
@@ -23,32 +23,31 @@ const Register = ({ onToggle, register, handleToast }) => {
 
     // Client-side validation for username, email, password, and role
     if (!form.username) {
-      showError('Username is required');
+      showError("Username is required");
       return;
     }
     if (!form.email) {
-      showError('Email is required');
+      showError("Email is required");
       return;
     }
     if (!form.password) {
-      showError('Password is required');
+      showError("Password is required");
       return;
     }
     if (!form.role) {
-      showError('Role is required');
+      showError("Role is required");
       return;
     }
 
     // Call the register function passed as a prop
     await register(form);
-    setForm({ username: '', email: '', password: '', role: '' }); // Καθαρισμός state μετά το register
+    setForm({ username: "", email: "", password: "", role: "" }); // Καθαρισμός state μετά το register
   };
 
   const showError = (msg) => {
     setError(msg);
-    setTimeout(() => setError(''), 3500);
+    setTimeout(() => setError(""), 3500);
   };
-
 
   return (
     <div className="register-bg">
@@ -61,9 +60,15 @@ const Register = ({ onToggle, register, handleToast }) => {
         )}
         <div className="text-center mb-4">
           {/* Logo and title */}
-          <img src="https://img.icons8.com/fluency/48/000000/add-user-group-man-man.png" alt="Register" className="mb-2" />
+          <img
+            src="https://img.icons8.com/fluency/48/000000/add-user-group-man-man.png"
+            alt="Register"
+            className="mb-2"
+          />
           <h2 className="register-title">Register</h2>
-          <p className="text-muted small">Create your account to get started.</p>
+          <p className="text-muted small">
+            Create your account to get started.
+          </p>
         </div>
 
         {/* Username input field */}
@@ -117,15 +122,22 @@ const Register = ({ onToggle, register, handleToast }) => {
         </div>
 
         {/* Submit button */}
-        <button type="submit" className="btn register-btn btn-lg w-100 shadow-sm">
+        <button
+          type="submit"
+          className="btn register-btn btn-lg w-100 shadow-sm"
+        >
           Register
         </button>
 
         {/* Login link */}
         <div className="mt-3 text-center">
           <span className="text-muted small">
-            Already have an account?{' '}
-            <button type="button" className="register-login-btn fw-bold" onClick={onToggle}>
+            Already have an account?{" "}
+            <button
+              type="button"
+              className="register-login-btn fw-bold"
+              onClick={onToggle}
+            >
               Login
             </button>
           </span>

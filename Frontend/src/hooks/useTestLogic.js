@@ -25,22 +25,27 @@ function useTestLogic() {
     window.speechSynthesis.speak(utterance);
   }, []);
 
-  const handleOption = useCallback((option) => {
-    const timeTaken = (Date.now() - startTime) / 1000;
-    setResponseTimes((prev) => [...prev, timeTaken]);
-    setAnswers((prev) => [...prev, option]);
-    if (step < questions.length - 1) {
-      setStep(step + 1);
-    } else {
-      setShowResult(true);
-    }
-  }, [step, startTime, questions.length]);
+  const handleOption = useCallback(
+    (option) => {
+      const timeTaken = (Date.now() - startTime) / 1000;
+      setResponseTimes((prev) => [...prev, timeTaken]);
+      setAnswers((prev) => [...prev, option]);
+      if (step < questions.length - 1) {
+        setStep(step + 1);
+      } else {
+        setShowResult(true);
+      }
+    },
+    [step, startTime, questions.length]
+  );
 
   const getScore = useCallback(() => {
     let score = 0;
     questions.forEach((q, i) => {
-      if (q.answer && ['A', 'B', 'C', 'D'].includes(q.answer)) {
-        const correctOption = q.options['A'] ? q.options[q.answer] : q.options[["A", "B", "C", "D"].indexOf(q.answer)];
+      if (q.answer && ["A", "B", "C", "D"].includes(q.answer)) {
+        const correctOption = q.options["A"]
+          ? q.options[q.answer]
+          : q.options[["A", "B", "C", "D"].indexOf(q.answer)];
         if (answers[i] === correctOption) score++;
       } else {
         if (answers[i] === q.answer) score++;
@@ -66,8 +71,12 @@ function useTestLogic() {
   }, []);
 
   const getCorrectOptionValue = useCallback((q) => {
-    if (q.answer && ['A', 'B', 'C', 'D'].includes(q.answer) && Array.isArray(q.options)) {
-      const idx = ['A', 'B', 'C', 'D'].indexOf(q.answer);
+    if (
+      q.answer &&
+      ["A", "B", "C", "D"].includes(q.answer) &&
+      Array.isArray(q.options)
+    ) {
+      const idx = ["A", "B", "C", "D"].indexOf(q.answer);
       return q.options[idx];
     }
     return q.answer;

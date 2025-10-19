@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../css/Recommended.module.css";
 
@@ -31,14 +31,25 @@ function Recommended() {
 
   return (
     <div className={styles.container}>
+      <button
+        className={styles.startBtn}
+        style={{ background: "#6c757d", marginBottom: "1rem" }}
+        onClick={() => navigate(-1)}
+      >
+        Back
+      </button>
       <div className={styles.header}>
-        <img src="https://img.icons8.com/color/36/idea.png" className={styles.headerIcon} alt="idea" />
+        <img
+          src="https://img.icons8.com/color/36/idea.png"
+          className={styles.headerIcon}
+          alt="idea"
+        />
         <h2>Practice: Personalized Test</h2>
       </div>
       {loading ? (
         <div>Loading...</div>
       ) : error ? (
-        <div style={{color:"red"}}>{error}</div>
+        <div style={{ color: "red" }}>{error}</div>
       ) : questions.length === 0 ? (
         <div>No recommendations found!</div>
       ) : (
@@ -54,13 +65,18 @@ function Recommended() {
                 <div>{q.question}</div>
                 <ul>
                   {q.options.map((opt, i) => (
-                    <li key={i}>{String.fromCharCode(65 + i)}. {opt}</li>
+                    <li key={i}>
+                      {String.fromCharCode(65 + i)}. {opt}
+                    </li>
                   ))}
                 </ul>
               </li>
             ))}
           </ul>
-          <button className={styles.startBtn} onClick={() => navigate("/recommended-test")}>
+          <button
+            className={styles.startBtn}
+            onClick={() => navigate("/recommended-test")}
+          >
             Start Practicing
           </button>
         </div>

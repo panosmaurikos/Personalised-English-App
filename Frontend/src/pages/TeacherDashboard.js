@@ -1,21 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import styles from '../css/TeacherDashboard.module.css';
-import TestCard from '../components/Test/TestCard';
-import TestForm from '../components/Test/TestForm';
-import ViewTest from '../components/Test/ViewTest';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import styles from "../css/TeacherDashboard.module.css";
+import TestCard from "../components/Test/TestCard";
+import TestForm from "../components/Test/TestForm";
+import ViewTest from "../components/Test/ViewTest";
 
 function TeacherDashboard() {
   const [tests, setTests] = useState([]);
   const [selectedTest, setSelectedTest] = useState(null);
-  const [form, setForm] = useState({ title: '', description: '', type: 'mixed', questions: [] });
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    type: "mixed",
+    questions: [],
+  });
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isResultsOpen, setIsResultsOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -24,33 +29,37 @@ function TeacherDashboard() {
 
   const fetchTests = async () => {
     try {
-      const token = localStorage.getItem('jwt');
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/teacher/tests`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const token = localStorage.getItem("jwt");
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/teacher/tests`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (res.ok) {
         const data = await res.json();
         setTests(data);
       } else {
-        setError('Failed to fetch tests');
+        setError("Failed to fetch tests");
       }
     } catch (err) {
-      setError('Error fetching tests');
+      setError("Error fetching tests");
       console.error(err);
     }
   };
 
   const validateForm = () => {
-    if (!form.title.trim()) return 'Title is required';
-    if (form.questions.length === 0) return 'At least one question is required';
+    if (!form.title.trim()) return "Title is required";
+    if (form.questions.length === 0) return "At least one question is required";
     for (const q of form.questions) {
-      if (!q.question_text?.trim()) return 'Question text is required';
+      if (!q.question_text?.trim()) return "Question text is required";
       // Always MCQ
-      for (const key of ['A', 'B', 'C', 'D']) {
-        if (!q.options?.[key]?.trim()) return 'All options (A-D) are required';
+      for (const key of ["A", "B", "C", "D"]) {
+        if (!q.options?.[key]?.trim()) return "All options (A-D) are required";
       }
-      if (!q.correct_answer || !['A', 'B', 'C', 'D'].includes(q.correct_answer)) return 'Valid correct answer required (A-D)';
-      if (Number(q.points) < 1) return 'Points must be at least 1';
+      if (!q.correct_answer || !["A", "B", "C", "D"].includes(q.correct_answer))
+        return "Valid correct answer required (A-D)";
+      if (Number(q.points) < 1) return "Points must be at least 1";
     }
     return null;
   };
@@ -63,21 +72,27 @@ function TeacherDashboard() {
       return;
     }
     try {
-      const token = localStorage.getItem('jwt');
+      const token = localStorage.getItem("jwt");
       const payload = {
         ...form,
-        questions: form.questions.map(q => ({
+        questions: form.questions.map((q) => ({
           ...q,
-          question_type: q.category || q.question_type || 'vocabulary', // Fallback to ensure question_type is set
-          options: q.options || { A: '', B: '', C: '', D: '' },
+          question_type: q.category || q.question_type || "vocabulary", // Fallback to ensure question_type is set
+          options: q.options || { A: "", B: "", C: "", D: "" },
         })),
       };
-      console.log('Creating test with payload:', payload);
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/teacher/tests`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(payload),
-      });
+      console.log("Creating test with payload:", payload);
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/teacher/tests`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
       const rawText = await res.text();
       let data = {};
       try {
@@ -90,19 +105,26 @@ function TeacherDashboard() {
         fetchTests();
         setIsCreateOpen(false);
         resetForm();
-        setError('');
+        setError("");
       } else {
         // Show backend error if available, else show raw text and status
         setError(
-          (typeof data === 'object' && (data.error || data.message)) ||
-          (typeof data === 'string' && data) ||
-          `Failed to create test (status ${res.status})`
+          (typeof data === "object" && (data.error || data.message)) ||
+            (typeof data === "string" && data) ||
+            `Failed to create test (status ${res.status})`
         );
         // Debug: log backend error and raw response
-        console.error('Create test error:', data, 'Status:', res.status, 'Raw:', rawText);
+        console.error(
+          "Create test error:",
+          data,
+          "Status:",
+          res.status,
+          "Raw:",
+          rawText
+        );
       }
     } catch (err) {
-      setError('Error creating test');
+      setError("Error creating test");
       console.error(err);
     }
   };
@@ -115,21 +137,27 @@ function TeacherDashboard() {
       return;
     }
     try {
-      const token = localStorage.getItem('jwt');
+      const token = localStorage.getItem("jwt");
       const payload = {
         ...form,
-        questions: form.questions.map(q => ({
+        questions: form.questions.map((q) => ({
           ...q,
-          question_type: q.category || q.question_type || 'vocabulary',
+          question_type: q.category || q.question_type || "vocabulary",
         })),
       };
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/teacher/tests/${selectedTest.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/teacher/tests/${selectedTest.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
       if (!res) {
-        setError('No response from server. Is the backend running?');
+        setError("No response from server. Is the backend running?");
         return;
       }
       if (res.ok) {
@@ -137,32 +165,35 @@ function TeacherDashboard() {
         setIsEditOpen(false);
         setSelectedTest(null);
         resetForm();
-        setError('');
+        setError("");
       } else {
         const rawText = await res.text();
-        setError(rawText || 'Failed to update test');
+        setError(rawText || "Failed to update test");
       }
     } catch (err) {
-      setError('Network error: Could not reach the backend (PUT).');
+      setError("Network error: Could not reach the backend (PUT).");
       console.error(err);
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this test?')) {
+    if (window.confirm("Are you sure you want to delete this test?")) {
       try {
-        const token = localStorage.getItem('jwt');
-        const res = await fetch(`${process.env.REACT_APP_API_URL}/teacher/tests/${id}`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const token = localStorage.getItem("jwt");
+        const res = await fetch(
+          `${process.env.REACT_APP_API_URL}/teacher/tests/${id}`,
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         if (res.ok) {
           fetchTests();
         } else {
-          setError('Failed to delete test');
+          setError("Failed to delete test");
         }
       } catch (err) {
-        setError('Error deleting test');
+        setError("Error deleting test");
         console.error(err);
       }
     }
@@ -170,51 +201,59 @@ function TeacherDashboard() {
 
   const openEdit = async (test) => {
     try {
-      const token = localStorage.getItem('jwt');
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/teacher/tests/${test.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const token = localStorage.getItem("jwt");
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/teacher/tests/${test.id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (res.ok) {
         const fullTest = await res.json();
         // Fallback for questions
-        const questions = Array.isArray(fullTest.questions) ? fullTest.questions : [];
+        const questions = Array.isArray(fullTest.questions)
+          ? fullTest.questions
+          : [];
         setForm({
           title: fullTest.title,
-          description: fullTest.description || '',
+          description: fullTest.description || "",
           type: fullTest.type,
-          questions: questions.map(q => ({
+          questions: questions.map((q) => ({
             question_text: q.question_text,
             // always MCQ, keep options
             question_type: q.question_type,
-            options: q.options || { A: '', B: '', C: '', D: '' },
-            correct_answer: q.correct_answer || '',
+            options: q.options || { A: "", B: "", C: "", D: "" },
+            correct_answer: q.correct_answer || "",
             points: q.points ?? 1,
             category: q.question_type, // Align category with question_type
-          }))
+          })),
         });
         setSelectedTest(fullTest);
         setIsEditOpen(true);
-        setError('');
+        setError("");
       }
     } catch (err) {
-      setError('Error loading test for edit');
+      setError("Error loading test for edit");
       console.error(err);
     }
   };
 
   const openView = async (test) => {
     try {
-      const token = localStorage.getItem('jwt');
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/teacher/tests/${test.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const token = localStorage.getItem("jwt");
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/teacher/tests/${test.id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (res.ok) {
         const fullTest = await res.json();
         setSelectedTest(fullTest);
         setIsViewOpen(true);
       }
     } catch (err) {
-      setError('Error fetching test details');
+      setError("Error fetching test details");
       console.error(err);
     }
   };
@@ -225,20 +264,20 @@ function TeacherDashboard() {
   };
 
   const resetForm = () => {
-    setForm({ title: '', description: '', type: 'mixed', questions: [] });
+    setForm({ title: "", description: "", type: "mixed", questions: [] });
   };
 
-  const filteredTests = tests.filter(t => {
+  const filteredTests = tests.filter((t) => {
     const matchesSearch = t.title.toLowerCase().includes(search.toLowerCase());
-    const matchesType = typeFilter === 'all' ? true : t.type === typeFilter;
+    const matchesType = typeFilter === "all" ? true : t.type === typeFilter;
     return matchesSearch && matchesType;
   });
 
   return (
     <div className={styles.dashboard}>
-      <button 
+      <button
         className={styles.createBtn} // Reusing createBtn style for consistency, adjust if needed
-        style={{ background: '#6c757d', marginBottom: '1rem' }} 
+        style={{ background: "#6c757d", marginBottom: "1rem" }}
         onClick={() => navigate(-1)}
       >
         Back
@@ -266,16 +305,24 @@ function TeacherDashboard() {
           <option value="listening">Listening</option>
           <option value="mixed">Mixed</option>
         </select>
-        <button className={styles.createBtn} onClick={() => { resetForm(); setIsCreateOpen(true); }}>
+        <button
+          className={styles.createBtn}
+          onClick={() => {
+            resetForm();
+            setIsCreateOpen(true);
+          }}
+        >
           Create New Test
         </button>
       </div>
 
       <div className={styles.testGrid}>
         {filteredTests.length === 0 && (
-          <div className={styles.emptyState}>No tests found. Try adjusting filters or create a new test.</div>
+          <div className={styles.emptyState}>
+            No tests found. Try adjusting filters or create a new test.
+          </div>
         )}
-        {filteredTests.map(test => (
+        {filteredTests.map((test) => (
           <TestCard
             key={test.id}
             test={test}
@@ -321,7 +368,10 @@ function TeacherDashboard() {
       {isViewOpen && selectedTest && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
-            <ViewTest test={selectedTest} onClose={() => setIsViewOpen(false)} />
+            <ViewTest
+              test={selectedTest}
+              onClose={() => setIsViewOpen(false)}
+            />
           </div>
         </div>
       )}
@@ -330,7 +380,9 @@ function TeacherDashboard() {
       {isResultsOpen && selectedTest && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
-            <h3 className={styles.modalTitle}>Results & Stats — {selectedTest.title}</h3>
+            <h3 className={styles.modalTitle}>
+              Results & Stats — {selectedTest.title}
+            </h3>
             <div className={styles.statsGrid}>
               <div className={styles.statCard}>Average score: —</div>
               <div className={styles.statCard}>Median score: —</div>
@@ -342,7 +394,12 @@ function TeacherDashboard() {
               {/* placeholder table/list */}
               <div className={styles.placeholder}>No results yet.</div>
             </div>
-            <button onClick={() => setIsResultsOpen(false)} className={styles.closeBtn}>Close</button>
+            <button
+              onClick={() => setIsResultsOpen(false)}
+              className={styles.closeBtn}
+            >
+              Close
+            </button>
           </div>
         </div>
       )}

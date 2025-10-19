@@ -9,12 +9,14 @@ import (
 	"github.com/panosmaurikos/personalisedenglish/backend/repositories"
 )
 
+// TestService provides methods for managing tests
 type TestService struct {
-	repo      *repositories.TestRepository
-	userRepo  *repositories.UserRepository
-	validator *validator.Validate
+	repo      *repositories.TestRepository // Handles test data operations
+	userRepo  *repositories.UserRepository // Handles user data operations
+	validator *validator.Validate          // Validates request structs
 }
 
+// NewTestService creates a new TestService instance
 func NewTestService(repo *repositories.TestRepository, userRepo *repositories.UserRepository) *TestService {
 	return &TestService{
 		repo:      repo,
@@ -23,16 +25,20 @@ func NewTestService(repo *repositories.TestRepository, userRepo *repositories.Us
 	}
 }
 
+// CreateTest creates a new test if the user is a teacher
 func (s *TestService) CreateTest(ctx context.Context, userID int, req *models.CreateTestRequest) (*models.Test, error) {
+	// Validate request struct
 	if err := s.validator.Struct(req); err != nil {
 		return nil, err
 	}
 
-	user, err := s.userRepo.GetUserByID(ctx, userID) // Assume added GetUserByID
+	// Check user role
+	user, err := s.userRepo.GetUserByID(ctx, userID)
 	if err != nil || user == nil || user.Role != "teacher" {
 		return nil, errors.New("unauthorized: only teachers can create tests")
 	}
 
+	// Build test model
 	test := &models.Test{
 		TeacherID:   userID,
 		Title:       req.Title,
@@ -41,13 +47,16 @@ func (s *TestService) CreateTest(ctx context.Context, userID int, req *models.Cr
 		Questions:   req.Questions,
 	}
 
+	// Save test to repository
 	if err := s.repo.CreateTest(ctx, test); err != nil {
 		return nil, err
 	}
 	return test, nil
 }
 
+// GetTests returns all tests created by the teacher
 func (s *TestService) GetTests(ctx context.Context, userID int) ([]models.Test, error) {
+	// Check user role
 	user, err := s.userRepo.GetUserByID(ctx, userID)
 	if err != nil || user == nil || user.Role != "teacher" {
 		return nil, errors.New("unauthorized")
@@ -55,18 +64,22 @@ func (s *TestService) GetTests(ctx context.Context, userID int) ([]models.Test, 
 	return s.repo.GetTestsByTeacher(ctx, userID)
 }
 
+// GetTest returns a specific test if the user is authorized
 func (s *TestService) GetTest(ctx context.Context, userID, testID int) (*models.Test, error) {
 	test, err := s.repo.GetTestByID(ctx, testID)
 	if err != nil {
 		return nil, err
 	}
+	// Check ownership
 	if test == nil || test.TeacherID != userID {
 		return nil, errors.New("test not found or unauthorized")
 	}
 	return test, nil
 }
 
+// UpdateTest updates an existing test if the user is authorized
 func (s *TestService) UpdateTest(ctx context.Context, userID, testID int, req *models.UpdateTestRequest) (*models.Test, error) {
+	// Validate request struct
 	if err := s.validator.Struct(req); err != nil {
 		return nil, err
 	}
@@ -75,10 +88,12 @@ func (s *TestService) UpdateTest(ctx context.Context, userID, testID int, req *m
 	if err != nil {
 		return nil, err
 	}
+	// Check ownership
 	if test == nil || test.TeacherID != userID {
 		return nil, errors.New("test not found or unauthorized")
 	}
 
+	// Update fields if provided
 	if req.Title != "" {
 		test.Title = req.Title
 	}
@@ -92,17 +107,20 @@ func (s *TestService) UpdateTest(ctx context.Context, userID, testID int, req *m
 		test.Questions = req.Questions
 	}
 
+	// Save changes
 	if err := s.repo.UpdateTest(ctx, test); err != nil {
 		return nil, err
 	}
 	return test, nil
 }
 
+// DeleteTest deletes a test if the user is authorized
 func (s *TestService) DeleteTest(ctx context.Context, userID, testID int) error {
 	test, err := s.repo.GetTestByID(ctx, testID)
 	if err != nil {
 		return err
 	}
+	// Check ownership
 	if test == nil || test.TeacherID != userID {
 		return errors.New("test not found or unauthorized")
 	}

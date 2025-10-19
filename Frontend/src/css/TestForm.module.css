@@ -19,7 +19,9 @@
   color: #495057;
 }
 
-.input, .textarea, .select {
+.input,
+.textarea,
+.select {
   width: 100%;
   padding: 0.75rem;
   border: 1px solid #ced4da;
@@ -27,7 +29,9 @@
   transition: border-color 0.3s, box-shadow 0.3s;
 }
 
-.input:focus, .textarea:focus, .select:focus {
+.input:focus,
+.textarea:focus,
+.select:focus {
   border-color: #0d6efd;
   box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
@@ -50,7 +54,7 @@
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .addBtn {
