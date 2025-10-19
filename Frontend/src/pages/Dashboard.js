@@ -1,151 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../css/Dashboard.module.css";
-import { Button, Select, Input, DatePicker, Space } from "antd";
-import dayjs from "dayjs";
-import "antd/dist/reset.css";
-
-function ProgressRing({ value, color = "#007bff", size = 70, text }) {
-  const radius = 30;
-  const stroke = 7;
-  const normalizedRadius = radius - stroke * 0.5;
-  const circumference = normalizedRadius * 2 * Math.PI;
-  const pct = Math.max(0, Math.min(100, value));
-  const strokeDashoffset = circumference - (pct / 100) * circumference;
-
-  let fontSize = 16;
-  if (text && text.length > 5) fontSize = 13;
-  if (text && text.length > 12) fontSize = 10.5;
-
-  return (
-    <svg height={size} width={size} className={styles.progressRing}>
-      <circle
-        stroke="#e5e7eb"
-        fill="transparent"
-        strokeWidth={stroke}
-        r={normalizedRadius}
-        cx={size / 2}
-        cy={size / 2}
-      />
-      <circle
-        stroke={color}
-        fill="transparent"
-        strokeWidth={stroke}
-        strokeLinecap="round"
-        style={{ transition: "stroke-dashoffset 1s" }}
-        strokeDasharray={circumference + " " + circumference}
-        strokeDashoffset={strokeDashoffset}
-        r={normalizedRadius}
-        cx={size / 2}
-        cy={size / 2}
-      />
-      <foreignObject
-        x={size * 0.12}
-        y={size * 0.33}
-        width={size * 0.76}
-        height={size * 0.33}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "100%",
-            width: "100%",
-            fontWeight: "bold",
-            fontSize: fontSize,
-            color: "#222",
-            textAlign: "center",
-            lineHeight: 1.05,
-            wordBreak: "break-word",
-          }}
-        >
-          {text || `${pct}%`}
-        </div>
-      </foreignObject>
-    </svg>
-  );
-}
+import ProgressRing from "../components/ProgressRing";
 
 function Dashboard() {
-  // Filter/group state
-  const [filterDate, setFilterDate] = useState("");
-  const [filterScore, setFilterScore] = useState("");
-  const [filterLevel, setFilterLevel] = useState("");
-  const [filterAvgTime, setFilterAvgTime] = useState("");
-  const [filterType, setFilterType] = useState("");
-  const [groupBy, setGroupBy] = useState("");
-
-  // Data state
   const [history, setHistory] = useState([]);
   const [mistakes, setMistakes] = useState([]);
   const [misconceptions, setMisconceptions] = useState([]);
   const [phenomenonMistakes, setPhenomenonMistakes] = useState([]);
+  const [classrooms, setClassrooms] = useState([]);
+  const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-
-  // Helper: format date/time
-  function formatDateTime(dt) {
-    const d = new Date(dt);
-    const day = String(d.getDate()).padStart(2, "0");
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const year = d.getFullYear();
-    const hours = String(d.getHours()).padStart(2, "0");
-    const minutes = String(d.getMinutes()).padStart(2, "0");
-    return `${day}/${month}/${year} ${hours}:${minutes}`;
-  }
-
-  // Filtering logic
-  const filteredHistory = history.filter((h) => {
-    let pass = true;
-    if (filterDate) {
-      const d = new Date(h.completed_at);
-      const filter = new Date(filterDate);
-      pass =
-        pass &&
-        d.getFullYear() === filter.getFullYear() &&
-        d.getMonth() === filter.getMonth() &&
-        d.getDate() === filter.getDate();
-    }
-    if (filterScore) {
-      pass = pass && h.score >= parseFloat(filterScore);
-    }
-    if (filterLevel) {
-      pass = pass && h.level === filterLevel;
-    }
-    if (filterAvgTime) {
-      pass = pass && h.avg_time >= parseFloat(filterAvgTime);
-    }
-    if (filterType) {
-      pass = pass && h.test_type === filterType;
-    }
-    return pass;
-  });
-
-  // Grouping logic
-  function groupHistory(data) {
-    if (!groupBy) return [{ group: null, items: data }];
-    const groups = {};
-    data.forEach((h) => {
-      let key = "";
-      if (groupBy === "date") {
-        key = formatDateTime(h.completed_at).split(" ")[0];
-      } else if (groupBy === "score") {
-        key = `${Math.floor(h.score / 10) * 10}%+`;
-      } else if (groupBy === "level") {
-        key = h.level;
-      } else if (groupBy === "avg_time") {
-        key = `${Math.floor(h.avg_time)}s+`;
-      } else if (groupBy === "type") {
-        key = h.test_type;
-      }
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(h);
-    });
-    return Object.entries(groups).map(([group, items]) => ({ group, items }));
-  }
-  const groupedHistory = groupHistory(filteredHistory);
 
   const capitalize = (str) =>
     str && typeof str === "string"
@@ -164,67 +31,58 @@ function Dashboard() {
         setMistakes([]);
         setMisconceptions([]);
         setPhenomenonMistakes([]);
+        setClassrooms([]);
         return;
       }
-
       try {
         // Fetch history
-        const hRes = await fetch(
-          `${process.env.REACT_APP_API_URL}/user-history`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const hRes = await fetch(`${process.env.REACT_APP_API_URL}/user-history`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         let historyData = [];
         if (hRes.ok) {
           historyData = await hRes.json();
         }
         setHistory(Array.isArray(historyData) ? historyData : []);
-
         // Fetch mistakes
-        const mRes = await fetch(
-          `${process.env.REACT_APP_API_URL}/user-mistakes`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const mRes = await fetch(`${process.env.REACT_APP_API_URL}/user-mistakes`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         let mistakesData = [];
         if (mRes.ok) {
           mistakesData = await mRes.json();
         }
         setMistakes(Array.isArray(mistakesData) ? mistakesData : []);
-
         // Fetch misconceptions for latest test
         let misconceptionsData = [];
         if (Array.isArray(historyData) && historyData.length > 0) {
           const latestTestId = historyData[0].test_id;
-          const misconRes = await fetch(
-            `${process.env.REACT_APP_API_URL}/misconceptions/${latestTestId}`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
+          const misconRes = await fetch(`${process.env.REACT_APP_API_URL}/misconceptions/${latestTestId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
           if (misconRes.ok) {
             misconceptionsData = await misconRes.json();
           }
         }
-        setMisconceptions(
-          Array.isArray(misconceptionsData) ? misconceptionsData : []
-        );
-
+        setMisconceptions(Array.isArray(misconceptionsData) ? misconceptionsData : []);
         // Fetch phenomenon mistakes
-        const pRes = await fetch(
-          `${process.env.REACT_APP_API_URL}/user-phenomenon-mistakes`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const pRes = await fetch(`${process.env.REACT_APP_API_URL}/user-phenomenon-mistakes`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         let pData = [];
         if (pRes.ok) {
           pData = await pRes.json();
         }
         setPhenomenonMistakes(Array.isArray(pData) ? pData : []);
-
+        // Fetch classrooms
+        const cRes = await fetch(`${process.env.REACT_APP_API_URL}/classrooms`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        let cData = [];
+        if (cRes.ok) {
+          cData = await cRes.json();
+        }
+        setClassrooms(Array.isArray(cData) ? cData : []);
         setLoading(false);
       } catch (err) {
         setError(err.message || "Unknown error");
@@ -233,10 +91,49 @@ function Dashboard() {
         setMistakes([]);
         setMisconceptions([]);
         setPhenomenonMistakes([]);
+        setClassrooms([]);
       }
     }
     fetchData();
   }, []);
+
+  const handleJoinClassroom = async (e) => {
+    e.preventDefault();
+    if (!inviteCode.trim()) {
+      setError("Invite code is required");
+      return;
+    }
+    try {
+      const token = localStorage.getItem("jwt");
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/classrooms/join`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ invite_code: inviteCode }),
+
+      });
+      if (res.ok) {
+        setInviteCode("");
+        setError("");
+        // Refresh classrooms
+        const cRes = await fetch(`${process.env.REACT_APP_API_URL}/classrooms`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (cRes.ok) {
+          const cData = await cRes.json();
+          setClassrooms(Array.isArray(cData) ? cData : []);
+        }
+      } else {
+        const data = await res.json();
+        setError(data.error || "Failed to join classroom");
+      }
+    } catch (err) {
+      setError("Error joining classroom");
+      console.error(err);
+    }
+  };
 
   if (loading)
     return (
@@ -251,8 +148,7 @@ function Dashboard() {
       </div>
     );
 
-  const latestTest =
-    Array.isArray(history) && history.length > 0 ? history[0] : null;
+  const latestTest = Array.isArray(history) && history.length > 0 ? history[0] : null;
 
   return (
     <div className={styles.dashboardContainer}>
@@ -262,7 +158,7 @@ function Dashboard() {
         </button>
         <div className={styles.headerContent}>
           <img
-            src="https://img.icons8.com/color/64/graduation-cap.png  "
+            src="https://img.icons8.com/color/64/graduation-cap.png"
             alt="cap"
             className={styles.headerIcon}
           />
@@ -280,9 +176,7 @@ function Dashboard() {
           Personalized Practice
         </button>
       </header>
-
       <div className={styles.statsGrid}>
-        {/* Score */}
         <div className={styles.statCard}>
           <ProgressRing
             value={latestTest ? latestTest.score : 0}
@@ -294,7 +188,6 @@ function Dashboard() {
             {latestTest ? latestTest.score.toFixed(2) + "%" : "--"}
           </div>
         </div>
-        {/* Level */}
         <div className={styles.statCard}>
           <ProgressRing
             value={
@@ -320,7 +213,6 @@ function Dashboard() {
             {latestTest ? latestTest.level : "--"}
           </div>
         </div>
-        {/* Avg time */}
         <div className={styles.statCard}>
           <ProgressRing
             value={
@@ -336,7 +228,6 @@ function Dashboard() {
             {latestTest ? latestTest.avg_time.toFixed(2) + "s" : "--"}
           </div>
         </div>
-        {/* Mistakes */}
         <div className={styles.statCard}>
           <ProgressRing
             value={
@@ -359,12 +250,11 @@ function Dashboard() {
           </div>
         </div>
       </div>
-
       <div className={styles.cardsFlex}>
         <div className={styles.card}>
           <h3>
             <img
-              src="https://img.icons8.com/color/32/error--v1.png  "
+              src="https://img.icons8.com/color/32/error--v1.png"
               alt="improve"
               className={styles.cardIcon}
             />
@@ -388,7 +278,7 @@ function Dashboard() {
         <div className={styles.card}>
           <h3>
             <img
-              src="https://img.icons8.com/color/32/inspection.png  "
+              src="https://img.icons8.com/color/32/inspection.png"
               alt="mistake"
               className={styles.cardIcon}
             />
@@ -408,7 +298,6 @@ function Dashboard() {
           </ul>
         </div>
       </div>
-
       {phenomenonMistakes.length > 0 && (
         <section className={styles.phenomenonSection}>
           <h3>Top Mistakes by Phenomenon</h3>
@@ -419,7 +308,6 @@ function Dashboard() {
               </li>
             ))}
           </ul>
-          {/* Remove extra link - keep only the message */}
           <div
             style={{
               color: "#2563eb",
@@ -432,226 +320,102 @@ function Dashboard() {
           </div>
         </section>
       )}
-
-      {/* History Section with Filter/Group Controls and Complex Grouping */}
-      <div className={styles.historySection}>
-        <h3
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            fontSize: "1.18em",
-            color: "#2563eb",
-            marginBottom: 8,
-          }}
-        >
-          <span style={{ display: "flex", alignItems: "center" }}>
-            <img
-              src="https://img.icons8.com/color/28/clock--v1.png  "
-              alt="history"
-              className={styles.historyIcon}
-              style={{ marginRight: 4 }}
-            />
-            Test History
-          </span>
-        </h3>
-        {/* Filter/Group Controls with Ant Design */}
-        <div
-          style={{
-            marginBottom: 18,
-            background: "#f6f8fc",
-            borderRadius: 8,
-            padding: "16px 18px",
-            display: "flex",
-            gap: 18,
-            flexWrap: "wrap",
-            alignItems: "center",
-            boxShadow: "0 1px 4px rgba(60,100,180,0.07)",
-          }}
-        >
-          <Space wrap>
-            <span style={{ fontWeight: 500 }}>
-              Date:{" "}
-              <DatePicker
-                value={filterDate ? dayjs(filterDate) : null}
-                onChange={(d) => setFilterDate(d ? d.format("YYYY-MM-DD") : "")}
-                style={{ borderRadius: 4 }}
-              />
-            </span>
-            <span style={{ fontWeight: 500 }}>
-              Score ≥{" "}
-              <Input
-                type="number"
-                min={0}
-                max={100}
-                value={filterScore}
-                onChange={(e) => setFilterScore(e.target.value)}
-                style={{ width: 80 }}
-              />
-            </span>
-            <span style={{ fontWeight: 500 }}>
-              Level:{" "}
-              <Select
-                value={filterLevel}
-                onChange={(v) => setFilterLevel(v)}
-                style={{ width: 120 }}
-                options={[
-                  { value: "", label: "All" },
-                  { value: "Beginner", label: "Beginner" },
-                  { value: "Intermediate", label: "Intermediate" },
-                  { value: "Advanced", label: "Advanced" },
-                ]}
-              />
-            </span>
-            <span style={{ fontWeight: 500 }}>
-              Avg Time ≥{" "}
-              <Input
-                type="number"
-                min={0}
-                step={0.01}
-                value={filterAvgTime}
-                onChange={(e) => setFilterAvgTime(e.target.value)}
-                style={{ width: 80 }}
-              />
-            </span>
-            <span style={{ fontWeight: 500 }}>
-              Type:{" "}
-              <Select
-                value={filterType}
-                onChange={(v) => setFilterType(v)}
-                style={{ width: 120 }}
-                options={[
-                  { value: "", label: "All" },
-                  { value: "regular", label: "Regular" },
-                  { value: "personalized", label: "Personalized" },
-                ]}
-              />
-            </span>
-            <span style={{ fontWeight: 500 }}>
-              Group by:{" "}
-              <Select
-                value={groupBy}
-                onChange={(v) => setGroupBy(v)}
-                style={{ width: 120 }}
-                options={[
-                  { value: "", label: "None" },
-                  { value: "date", label: "Date" },
-                  { value: "score", label: "Score" },
-                  { value: "level", label: "Level" },
-                  { value: "avg_time", label: "Avg Time" },
-                  { value: "type", label: "Type" },
-                ]}
-              />
-            </span>
-            <Button
-              type="primary"
-              size="large"
-              style={{ fontWeight: 600 }}
-              onClick={() => {
-                setFilterDate("");
-                setFilterScore("");
-                setFilterLevel("");
-                setFilterAvgTime("");
-                setFilterType("");
-                setGroupBy("");
-              }}
-            >
-              Reset
-            </Button>
-          </Space>
-        </div>
-        {/* Grouped Table */}
-        {filteredHistory.length === 0 ? (
-          <div className={styles.listEmpty} style={{ marginTop: 12 }}>
-            No tests found for selected filters.
-          </div>
+      <section className={styles.classroomSection}>
+        <h3>Join a Classroom</h3>
+        <form onSubmit={handleJoinClassroom}>
+          <input
+            type="text"
+            placeholder="Enter invite code"
+            value={inviteCode}
+            onChange={(e) => setInviteCode(e.target.value)}
+            className={styles.searchInput}
+          />
+          <button type="submit" className={styles.createBtn}>Join</button>
+        </form>
+        <h3>Your Classrooms</h3>
+        {classrooms.length === 0 ? (
+          <div className={styles.listEmpty}>No classrooms joined yet.</div>
         ) : (
-          groupedHistory.map(({ group, items }) => (
-            <div key={group || "all"} style={{ marginBottom: group ? 18 : 0 }}>
-              {group && (
-                <div
-                  style={{
-                    fontWeight: 600,
-                    fontSize: "1.08em",
-                    color: "#4173b3",
-                    marginBottom: 6,
-                    background: "#eaf2fb",
-                    borderRadius: 6,
-                    padding: "6px 12px",
-                    boxShadow: "0 1px 4px rgba(60,100,180,0.04)",
-                  }}
-                >
-                  {groupBy.charAt(0).toUpperCase() + groupBy.slice(1)}: {group}
-                </div>
-              )}
-              <table
-                className={styles.historyTable}
-                style={{
-                  borderRadius: 8,
-                  overflow: "hidden",
-                  boxShadow: "0 1px 6px rgba(60,100,180,0.07)",
-                  marginTop: 4,
-                }}
-              >
-                <thead style={{ background: "#eaf2fb" }}>
-                  <tr>
-                    <th style={{ padding: "8px 0" }}>Date</th>
-                    <th style={{ padding: "8px 0" }}>Score</th>
-                    <th style={{ padding: "8px 0" }}>Level</th>
-                    <th style={{ padding: "8px 0" }}>Avg Time</th>
-                    <th style={{ padding: "8px 0" }}>Type</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((h) => (
-                    <tr key={h.test_id} style={{ background: "#fff" }}>
-                      <td style={{ padding: "8px 0" }}>
-                        {formatDateTime(h.completed_at)}
-                      </td>
-                      <td style={{ padding: "8px 0" }}>
-                        {h.score.toFixed(2)}%
-                      </td>
-                      <td style={{ padding: "8px 0" }}>{h.level}</td>
-                      <td style={{ padding: "8px 0" }}>
-                        {h.avg_time.toFixed(2)}s
-                      </td>
-                      <td style={{ padding: "8px 0" }}>
-                        {h.test_type === "personalized" ? (
-                          <span
-                            className={styles.testTypePersonalized}
-                            style={{
-                              background: "#f5a524",
-                              color: "#fff",
-                              borderRadius: 6,
-                              padding: "4px 14px",
-                              fontWeight: 600,
-                              boxShadow: "0 1px 4px rgba(245,165,36,0.09)",
-                            }}
-                          >
-                            Personalized
-                          </span>
-                        ) : (
-                          <span
-                            className={styles.testTypeRegular}
-                            style={{
-                              background: "#4fc3f7",
-                              color: "#fff",
-                              borderRadius: 6,
-                              padding: "4px 14px",
-                              fontWeight: 600,
-                              boxShadow: "0 1px 4px rgba(79,195,247,0.09)",
-                            }}
-                          >
-                            Regular
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ))
+          <div className={styles.testGrid}>
+            {classrooms.map((classroom) => (
+              <div key={classroom.id} className={styles.classroomCard}>
+                <h4>{classroom.name}</h4>
+                <p>{classroom.description || "No description"}</p>
+                <h5>Assigned Tests</h5>
+                {classroom.tests?.length ? (
+                  <ul>
+                    {classroom.tests.map((test) => (
+                      <li key={test.id}>
+                        {test.title}
+                        <button
+                          onClick={() => navigate(`/test/${test.id}`)}
+                          className={styles.actionBtn}
+                        >
+                          Take Test
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>No tests assigned.</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+      <div className={styles.historySection}>
+        <h3>
+          <img
+            src="https://img.icons8.com/color/28/clock--v1.png"
+            alt="history"
+            className={styles.historyIcon}
+          />
+          Test History
+        </h3>
+        {Array.isArray(history) && history.length === 0 ? (
+          <div className={styles.listEmpty}>No tests taken yet.</div>
+        ) : (
+          <table className={styles.historyTable}>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Score</th>
+                <th>Level</th>
+                <th>Avg Time</th>
+                <th>Type</th>
+              </tr>
+            </thead>
+            <tbody>
+              {history.map((h) => (
+                <tr key={h.test_id}>
+                  <td>{(() => {
+                    const d = new Date(h.completed_at);
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const year = d.getFullYear();
+                    const hours = String(d.getHours()).padStart(2, '0');
+                    const minutes = String(d.getMinutes()).padStart(2, '0');
+                    return `${day}/${month}/${year} ${hours}:${minutes}`;
+                  })()}</td>
+                  <td>{h.score.toFixed(2)}%</td>
+                  <td>{h.level}</td>
+                  <td>{h.avg_time.toFixed(2)}s</td>
+                  <td>
+                    {h.test_type === 'personalized' ? (
+                      <span className={styles.testTypePersonalized}>
+                        Personalized
+                      </span>
+                    ) : (
+                      <span className={styles.testTypeRegular}>
+                        Regular
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
     </div>

@@ -36,14 +36,18 @@ func main() {
 	testRepo := repositories.NewTestRepository(db)
 	testService := services.NewTestService(testRepo, userRepo)
 
-	// 4. Router setup
-	h := router.NewHandler()
+	// ΠΡΟΣΘΗΚΗ: Classroom service
+	classroomRepo := repositories.NewClassroomRepository(db)
+	classroomService := services.NewClassroomService(classroomRepo, userRepo, testRepo)
+
+	// 4. Router setup - ΠΕΡΑΣΕ το classroomService
+	h := router.NewHandler(classroomService)
 	r := h.SetupRouter(registerHandler, loginHandler, forgotPasswordHandler, resetPasswordOTPHandler, testService, db)
 
 	// 6. Server setup
 	srv := &http.Server{
 		Addr:         ":" + os.Getenv("SERVER_PORT"),
-		Handler:      r, // Use the router directly, CORS is handled inside router
+		Handler:      r,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,

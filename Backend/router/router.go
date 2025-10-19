@@ -18,10 +18,12 @@ import (
 	"github.com/rs/cors"
 )
 
-type Handler struct{}
+type Handler struct {
+	classroomService *services.ClassroomService
+}
 
-func NewHandler() *Handler {
-	return &Handler{}
+func NewHandler(classroomService *services.ClassroomService) *Handler {
+	return &Handler{classroomService: classroomService}
 }
 
 func (h *Handler) SetupRouter(
@@ -33,11 +35,14 @@ func (h *Handler) SetupRouter(
 	db *sql.DB,
 ) http.Handler {
 	r := mux.NewRouter()
+
+	// Public routes
 	r.Handle("/register", registerHandler).Methods("POST")
 	r.Handle("/login", loginHandler).Methods("POST")
 	r.Handle("/forgot-password", forgotPasswordHandler).Methods("POST")
 	r.Handle("/reset-password", resetPasswordOTPHandler).Methods("POST")
 
+	// Placement questions route
 	r.HandleFunc("/placement-questions", func(w http.ResponseWriter, r *http.Request) {
 		limit := 20
 		rows, err := db.Query(`SELECT id, question_text, question_type, options, correct_answer, points, category FROM placement_questions ORDER BY RANDOM() LIMIT $1`, limit)
@@ -76,15 +81,17 @@ func (h *Handler) SetupRouter(
 		json.NewEncoder(w).Encode(questions)
 	}).Methods("GET")
 
-	// Apply AuthMiddleware to protected routes
+	// Protected routes (require authentication)
 	protectedRouter := r.PathPrefix("/").Subrouter()
 	protectedRouter.Use(api.AuthMiddleware)
 
+	// Complete test route
 	protectedRouter.HandleFunc("/complete-test", func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
 			Score    float64 `json:"score"`
 			AvgTime  float64 `json:"avg_time"`
 			TestType string  `json:"test_type"`
+			TestID   int     `json:"test_id"` // New field for assigned tests
 			Answers  []struct {
 				QuestionID     int    `json:"question_id"`
 				SelectedOption string `json:"selected_option"`
@@ -177,17 +184,17 @@ func (h *Handler) SetupRouter(
 		err = db.QueryRow(`
 			INSERT INTO test_results_level (
 			   user_id, score, avg_response_time, vocabulary_pct, grammar_pct, 
-			   reading_pct, listening_pct, difficulty, fuzzy_level, test_type
+			   reading_pct, listening_pct, difficulty, fuzzy_level, test_type, test_id
 		   )
-		   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		   RETURNING id
-	   `, userID, req.Score, req.AvgTime, vocabPct, grammarPct, readingPct, listeningPct, difficulty, level, testType).Scan(&testResultID)
+	   `, userID, req.Score, req.AvgTime, vocabPct, grammarPct, readingPct, listeningPct, difficulty, level, testType, req.TestID).Scan(&testResultID)
 		if err != nil {
 			http.Error(w, `{"error": "Failed to save test result: `+err.Error()+`"}`, http.StatusInternalServerError)
 			return
 		}
 
-		// Save answers (unchanged)
+		// Save answers
 		for _, ans := range req.Answers {
 			_, err := db.Exec(`
             INSERT INTO test_answers (user_id, test_result_id, question_id, selected_option, correct_option, is_correct)
@@ -202,6 +209,7 @@ func (h *Handler) SetupRouter(
 		json.NewEncoder(w).Encode(map[string]string{"level": level})
 	}).Methods("POST")
 
+	// User mistakes by category
 	protectedRouter.HandleFunc("/user-mistakes", func(w http.ResponseWriter, r *http.Request) {
 		userID, ok := r.Context().Value("userID").(int)
 		if !ok || userID == 0 {
@@ -239,7 +247,7 @@ func (h *Handler) SetupRouter(
 		json.NewEncoder(w).Encode(mistakes)
 	}).Methods("GET")
 
-	// Νέο endpoint για λάθη ανά phenomenon
+	// User mistakes by phenomenon
 	protectedRouter.HandleFunc("/user-phenomenon-mistakes", func(w http.ResponseWriter, r *http.Request) {
 		userID, ok := r.Context().Value("userID").(int)
 		if !ok || userID == 0 {
@@ -276,6 +284,7 @@ func (h *Handler) SetupRouter(
 		json.NewEncoder(w).Encode(mistakes)
 	}).Methods("GET")
 
+	// Recommended questions
 	protectedRouter.HandleFunc("/recommended-questions", func(w http.ResponseWriter, r *http.Request) {
 		userID, ok := r.Context().Value("userID").(int)
 		if !ok || userID == 0 {
@@ -283,7 +292,7 @@ func (h *Handler) SetupRouter(
 			return
 		}
 
-		// Βρες το τελευταίο test του χρήστη
+		// Find user's latest test
 		var testID int
 		var fuzzyLevel string
 		err := db.QueryRow(`
@@ -299,7 +308,7 @@ func (h *Handler) SetupRouter(
 			return
 		}
 
-		// 1. Φέρε top phenomena με τα περισσότερα λάθη
+		// 1. Fetch top phenomena with most mistakes
 		var phenomena []string
 		rows, err := db.Query(`
 			SELECT pq.phenomenon
@@ -320,7 +329,7 @@ func (h *Handler) SetupRouter(
 		}
 
 		var questions []map[string]interface{}
-		// 2. Φέρε ερωτήσεις με βάση τα phenomena
+		// 2. Fetch questions based on phenomena
 		if len(phenomena) > 0 {
 			rows, err := db.Query(`
 				SELECT id, question_text, question_type, options, correct_answer, points, category, difficulty, phenomenon
@@ -362,7 +371,7 @@ func (h *Handler) SetupRouter(
 			}
 		}
 
-		// Συνέχισε με misconceptions/top categories όπως πριν
+		// Continue with misconceptions/top categories
 		misconceptions, err := feedback.DetectMisconceptions(db, testID)
 		categories := []string{}
 		if err == nil && len(misconceptions) > 0 {
@@ -390,7 +399,7 @@ func (h *Handler) SetupRouter(
 			}
 		}
 
-		// Επιλογή difficulty bounds με βάση fuzzy_level
+		// Select difficulty bounds based on fuzzy_level
 		difficultyMin, difficultyMax := 1, 5
 		switch fuzzyLevel {
 		case "Beginner":
@@ -401,7 +410,7 @@ func (h *Handler) SetupRouter(
 			difficultyMin, difficultyMax = 3, 5
 		}
 
-		// Φέρε επιπλέον ερωτήσεις από categories
+		// Fetch additional questions from categories
 		if len(categories) > 0 {
 			rows, err := db.Query(`
 				SELECT id, question_text, question_type, options, correct_answer, points, category, difficulty, phenomenon
@@ -451,6 +460,7 @@ func (h *Handler) SetupRouter(
 		json.NewEncoder(w).Encode(questions)
 	}).Methods("GET")
 
+	// User history
 	protectedRouter.HandleFunc("/user-history", func(w http.ResponseWriter, r *http.Request) {
 		userID, ok := r.Context().Value("userID").(int)
 		if !ok || userID == 0 {
@@ -496,7 +506,7 @@ func (h *Handler) SetupRouter(
 		json.NewEncoder(w).Encode(history)
 	}).Methods("GET")
 
-	// Misconceptions endpoint (όπως πριν)
+	// Misconceptions endpoint
 	protectedRouter.HandleFunc("/misconceptions/{testID}", func(w http.ResponseWriter, r *http.Request) {
 		userID, ok := r.Context().Value("userID").(int)
 		if !ok {
@@ -537,10 +547,37 @@ func (h *Handler) SetupRouter(
 		json.NewEncoder(w).Encode(misconceptions)
 	}).Methods("GET")
 
-	// -- Teacher routes (όπως πριν) --
+	// Classroom routes for students
+	protectedRouter.HandleFunc("/classrooms/join", func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Context().Value("userID").(int)
+		var req models.JoinClassroomRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, `{"error": "Invalid request body"}`, http.StatusBadRequest)
+			return
+		}
+		classroom, err := h.classroomService.JoinClassroom(r.Context(), userID, &req)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to join classroom: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(classroom)
+	}).Methods("POST")
+
+	protectedRouter.HandleFunc("/classrooms", func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Context().Value("userID").(int)
+		classrooms, err := h.classroomService.GetStudentClassrooms(r.Context(), userID)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to fetch classrooms: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(classrooms)
+	}).Methods("GET")
+
+	// Teacher routes
 	teacherRouter := r.PathPrefix("/teacher").Subrouter()
 	teacherRouter.Use(api.TeacherOnlyMiddleware)
 
+	// Teacher test routes
 	teacherRouter.HandleFunc("/tests", func(w http.ResponseWriter, r *http.Request) {
 		userID := r.Context().Value("userID").(int)
 		tests, err := testService.GetTests(r.Context(), userID)
@@ -612,6 +649,79 @@ func (h *Handler) SetupRouter(
 		w.WriteHeader(http.StatusNoContent)
 	}).Methods("DELETE")
 
+	// Teacher classroom routes
+	teacherRouter.HandleFunc("/classrooms", func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Context().Value("userID").(int)
+		classrooms, err := h.classroomService.GetClassrooms(r.Context(), userID)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to fetch classrooms: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(classrooms)
+	}).Methods("GET")
+
+	teacherRouter.HandleFunc("/classrooms", func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Context().Value("userID").(int)
+		var req models.CreateClassroomRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, `{"error": "Invalid request body"}`, http.StatusBadRequest)
+			return
+		}
+		classroom, err := h.classroomService.CreateClassroom(r.Context(), userID, &req)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to create classroom: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(classroom)
+	}).Methods("POST")
+
+	teacherRouter.HandleFunc("/classrooms/{id}", func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Context().Value("userID").(int)
+		vars := mux.Vars(r)
+		id, _ := strconv.Atoi(vars["id"])
+		classroom, err := h.classroomService.GetClassroom(r.Context(), userID, id)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to fetch classroom: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+		if classroom == nil {
+			http.Error(w, `{"error": "Classroom not found"}`, http.StatusNotFound)
+			return
+		}
+		json.NewEncoder(w).Encode(classroom)
+	}).Methods("GET")
+
+	teacherRouter.HandleFunc("/classrooms/{id}/tests", func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Context().Value("userID").(int)
+		vars := mux.Vars(r)
+		id, _ := strconv.Atoi(vars["id"])
+		var req models.AssignTestRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, `{"error": "Invalid request body"}`, http.StatusBadRequest)
+			return
+		}
+		err := h.classroomService.AssignTest(r.Context(), userID, id, req.TestID)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to assign test: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}).Methods("POST")
+
+	teacherRouter.HandleFunc("/classrooms/{id}/results/{testID}", func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Context().Value("userID").(int)
+		vars := mux.Vars(r)
+		id, _ := strconv.Atoi(vars["id"])
+		testID, _ := strconv.Atoi(vars["testID"])
+		results, err := h.classroomService.GetClassroomResults(r.Context(), userID, id, testID)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to fetch results: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(results)
+	}).Methods("GET")
+
+	// CORS configuration
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:3000"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
