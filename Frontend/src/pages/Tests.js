@@ -17,17 +17,14 @@ function Tests() {
     getCorrectOptionValue,
   } = useTestLogic();
   const [fuzzyLevel, setFuzzyLevel] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (showResult && !isSubmitting) {
-      setIsSubmitting(true);
+    if (showResult) {
       const token = localStorage.getItem("jwt");
       if (!token) {
         setError("Please log in to submit the test.");
-        setIsSubmitting(false);
         return;
       }
       const answersPayload = QUESTIONS.map((q, i) => ({
@@ -63,11 +60,9 @@ function Tests() {
         .then((data) => {
           setFuzzyLevel(data.level);
           setError("");
-          setIsSubmitting(false);
         })
         .catch((err) => {
           setError(err.message);
-          setIsSubmitting(false);
         });
     }
   }, [
@@ -77,7 +72,6 @@ function Tests() {
     getScore,
     getAvgTime,
     getCorrectOptionValue,
-    isSubmitting,
   ]);
 
   const typeBadge = (type) => {
