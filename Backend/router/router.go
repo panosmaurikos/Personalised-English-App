@@ -153,7 +153,7 @@ func (h *Handler) SetupRouter(
 		}
 
 		// Function to get pct or nil
-		getPct := func(cat string) *int {
+		getPct := func(cat string) *float64 {
 			if total, ok := totalMap[cat]; ok && total > 0 {
 				pct := float64(correctMap[cat]) / float64(total) * 100
 				rounded := math.Round(pct*100) / 100
