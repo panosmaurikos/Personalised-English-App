@@ -47,5 +47,6 @@ func (h *RegisterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"token":    token,
 		"username": user.Username,
 		"email":    user.Email,
+		"role":     user.Role,
 	})
 }

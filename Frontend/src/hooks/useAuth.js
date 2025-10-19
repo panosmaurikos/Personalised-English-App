@@ -112,9 +112,16 @@ const useAuth = (handleToast) => {
 
         if (newUser.token) {
           localStorage.setItem("jwt", newUser.token);
+          try {
+            // Decode JWT to get username and role
+            const decoded = jwtDecode(newUser.token);
+            setUser({ username: decoded.username, role: decoded.role });
+          } catch {
+            setUser(newUser); // fallback
+          }
+        } else {
+          setUser(newUser);
         }
-
-        setUser(newUser); // Set the user data
         setIsAuthenticated(true); // Mark the user as authenticated
         closeAuth(); // Close the authentication modal
         handleToast("Registration successful!", "success"); // Show success toast
