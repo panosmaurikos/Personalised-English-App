@@ -3,6 +3,7 @@ package fuzzylogic
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/panosmaurikos/personalisedenglish/backend/fuzzylogic/builder"
 	"github.com/panosmaurikos/personalisedenglish/backend/fuzzylogic/crisp"
@@ -118,7 +119,7 @@ func BuildFuzzyEngine() (fuzzy.Engine, *fuzzy.IDVal, *fuzzy.IDVal, *fuzzy.IDVal,
 }
 
 // EvaluateLevel runs the fuzzy engine and maps the output to a level string
-func EvaluateLevel(score float64, avgTime float64) (string, float64, error) {
+func EvaluateLevel(score float64, avgTime float64) (string, int, error) {
 	fmt.Println("Starting EvaluateLevel with score:", score, "avgTime:", avgTime)
 	engine, scoreVal, timeVal, levelVal, err := BuildFuzzyEngine()
 	if err != nil {
@@ -151,6 +152,8 @@ func EvaluateLevel(score float64, avgTime float64) (string, float64, error) {
 	default:
 		level = "Advanced"
 	}
-	fmt.Printf("Final result: Level=%s, RawScore=%.2f\n", level, levelScore)
-	return level, levelScore, nil
+	fmt.Printf("Final result: Level=%s, RawScore=%.15f\n", level, levelScore)
+
+	levelScoreInt := int(math.Round(levelScore))
+	return level, levelScoreInt, nil
 }
