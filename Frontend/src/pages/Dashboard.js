@@ -384,7 +384,15 @@ function Dashboard() {
             <tbody>
               {history.map((h) => (
                 <tr key={h.test_id}>
-                  <td>{new Date(h.completed_at).toLocaleDateString()}</td>
+                  <td>{(() => {
+                    const d = new Date(h.completed_at);
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const year = d.getFullYear();
+                    const hours = String(d.getHours()).padStart(2, '0');
+                    const minutes = String(d.getMinutes()).padStart(2, '0');
+                    return `${day}/${month}/${year} ${hours}:${minutes}`;
+                  })()}</td>
                   <td>{h.score.toFixed(2)}%</td>
                   <td>{h.level}</td>
                   <td>{h.avg_time.toFixed(2)}s</td>
