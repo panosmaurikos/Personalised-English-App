@@ -46,7 +46,8 @@
   flex-direction: column;
   gap: 7px;
 }
-.optionBtn, .optionBtnListen {
+.optionBtn,
+.optionBtnListen {
   background: #e9f2ff;
   color: #222;
   border: none;
@@ -61,7 +62,8 @@
   align-items: center;
   gap: 0.7em;
 }
-.optionBtn:hover, .optionBtn:focus {
+.optionBtn:hover,
+.optionBtn:focus {
   background: #c7e1ff;
   color: #1e3a8a;
 }
@@ -109,4 +111,4 @@
     padding: 10px 14px;
     font-size: 1.01rem;
   }
-}   
+}

@@ -1,9 +1,12 @@
 import { Toast, ToastContainer } from "react-bootstrap";
-import styles from '../css/Toast.module.css';
+import styles from "../css/Toast.module.css";
 
 function ToastMessage({ toast, setToast }) {
   return (
-    <ToastContainer position="top-center" className={`p-3 ${styles.toastContainer}`}>
+    <ToastContainer
+      position="top-center"
+      className={`p-3 ${styles.toastContainer}`}
+    >
       <Toast
         show={toast.show}
         bg={toast.bg}

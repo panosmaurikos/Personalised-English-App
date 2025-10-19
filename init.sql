@@ -608,7 +608,6 @@ CREATE TABLE IF NOT EXISTS test_answers (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     test_result_id INTEGER REFERENCES test_results_level(id) ON DELETE CASCADE,
-    -- <-- ΣΩΣΤΟ
     question_id INTEGER,
     selected_option VARCHAR(255),
     correct_option VARCHAR(255),

@@ -1,4 +1,3 @@
-import React from 'react';
 import HomeSection from "../components/HomeSection";
 import AboutSection from "../components/AboutSection";
 
@@ -7,7 +6,7 @@ function HomePage({
   scrollToSection,
   aboutRef,
   openAuth,
-  isAuthenticated
+  isAuthenticated,
 }) {
   return (
     <>

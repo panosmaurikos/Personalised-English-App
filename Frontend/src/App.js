@@ -1,5 +1,11 @@
-import React, { useRef } from "react";
-import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { useRef } from "react";
+import {
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import Tests from "./pages/Tests";
 import Dashboard from "./pages/Dashboard";
@@ -68,7 +74,8 @@ function App() {
     if (!isAuthenticated) return <Navigate to="/login" replace />;
     if (requiredRole && user?.role !== requiredRole) {
       // If teacher tries to access student route, redirect to teacher-dashboard
-      if (user?.role === "teacher") return <Navigate to="/teacher-dashboard" replace />;
+      if (user?.role === "teacher")
+        return <Navigate to="/teacher-dashboard" replace />;
       // If student tries to access teacher route, redirect to dashboard
       return <Navigate to="/dashboard" replace />;
     }

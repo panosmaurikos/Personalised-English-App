@@ -1,5 +1,4 @@
-import React from 'react';
-import styles from '../../css/TestForm.module.css';
+import styles from "../../css/TestForm.module.css";
 
 function TestForm({ form, setForm, onSubmit, onClose, title }) {
   const handleFormChange = (e) => {
@@ -13,7 +12,7 @@ function TestForm({ form, setForm, onSubmit, onClose, title }) {
     } else {
       newQuestions[index][e.target.name] = e.target.value;
       // always enforce multiple choice type in data
-      newQuestions[index].question_type = 'multiple';
+      newQuestions[index].question_type = "multiple";
     }
     setForm({ ...form, questions: newQuestions });
   };
@@ -30,14 +29,14 @@ function TestForm({ form, setForm, onSubmit, onClose, title }) {
       questions: [
         ...form.questions,
         {
-          question_text: '',
-          question_type: 'multiple',
-          category: 'vocabulary',
-          options: { A: '', B: '', C: '', D: '' },
-          correct_answer: '',
-          points: 1
-        }
-      ]
+          question_text: "",
+          question_type: "multiple",
+          category: "vocabulary",
+          options: { A: "", B: "", C: "", D: "" },
+          correct_answer: "",
+          points: 1,
+        },
+      ],
     });
   };
 
@@ -52,15 +51,31 @@ function TestForm({ form, setForm, onSubmit, onClose, title }) {
       <form onSubmit={onSubmit}>
         <div className={styles.formGroup}>
           <label>Title</label>
-          <input name="title" value={form.title} onChange={handleFormChange} required className={styles.input} />
+          <input
+            name="title"
+            value={form.title}
+            onChange={handleFormChange}
+            required
+            className={styles.input}
+          />
         </div>
         <div className={styles.formGroup}>
           <label>Description</label>
-          <textarea name="description" value={form.description} onChange={handleFormChange} className={styles.textarea} />
+          <textarea
+            name="description"
+            value={form.description}
+            onChange={handleFormChange}
+            className={styles.textarea}
+          />
         </div>
         <div className={styles.formGroup}>
           <label>Type</label>
-          <select name="type" value={form.type} onChange={handleFormChange} className={styles.select}>
+          <select
+            name="type"
+            value={form.type}
+            onChange={handleFormChange}
+            className={styles.select}
+          >
             <option value="vocabulary">Vocabulary</option>
             <option value="grammar">Grammar</option>
             <option value="reading">Reading</option>
@@ -74,7 +89,13 @@ function TestForm({ form, setForm, onSubmit, onClose, title }) {
           <div key={index} className={styles.questionBlock}>
             <div className={styles.formGroup}>
               <label>Question Text</label>
-              <input name="question_text" value={q.question_text} onChange={(e) => handleQuestionChange(index, e)} required className={styles.input} />
+              <input
+                name="question_text"
+                value={q.question_text}
+                onChange={(e) => handleQuestionChange(index, e)}
+                required
+                className={styles.input}
+              />
             </div>
 
             {/* Category instead of type; all are multiple choice */}
@@ -82,7 +103,7 @@ function TestForm({ form, setForm, onSubmit, onClose, title }) {
               <label>Category</label>
               <select
                 name="category"
-                value={q.category || 'vocabulary'}
+                value={q.category || "vocabulary"}
                 onChange={(e) => handleQuestionChange(index, e)}
                 className={styles.select}
               >
@@ -95,15 +116,26 @@ function TestForm({ form, setForm, onSubmit, onClose, title }) {
 
             {/* Multiple choice options */}
             <>
-              {['A', 'B', 'C', 'D'].map(key => (
+              {["A", "B", "C", "D"].map((key) => (
                 <div key={key} className={styles.formGroup}>
                   <label>Option {key}</label>
-                  <input value={q.options[key] || ''} onChange={(e) => handleOptionChange(index, key, e)} required className={styles.input} />
+                  <input
+                    value={q.options[key] || ""}
+                    onChange={(e) => handleOptionChange(index, key, e)}
+                    required
+                    className={styles.input}
+                  />
                 </div>
               ))}
               <div className={styles.formGroup}>
                 <label>Correct Answer</label>
-                <select name="correct_answer" value={q.correct_answer} onChange={(e) => handleQuestionChange(index, e)} required className={styles.select}>
+                <select
+                  name="correct_answer"
+                  value={q.correct_answer}
+                  onChange={(e) => handleQuestionChange(index, e)}
+                  required
+                  className={styles.select}
+                >
                   <option value="">Select</option>
                   <option value="A">A</option>
                   <option value="B">B</option>
@@ -115,15 +147,35 @@ function TestForm({ form, setForm, onSubmit, onClose, title }) {
 
             <div className={styles.formGroup}>
               <label>Points</label>
-              <input type="number" name="points" value={q.points} onChange={(e) => handleQuestionChange(index, e)} min="1" required className={styles.input} />
+              <input
+                type="number"
+                name="points"
+                value={q.points}
+                onChange={(e) => handleQuestionChange(index, e)}
+                min="1"
+                required
+                className={styles.input}
+              />
             </div>
-            <button type="button" onClick={() => removeQuestion(index)} className={styles.removeBtn}>Remove Question</button>
+            <button
+              type="button"
+              onClick={() => removeQuestion(index)}
+              className={styles.removeBtn}
+            >
+              Remove Question
+            </button>
           </div>
         ))}
-        <button type="button" onClick={addQuestion} className={styles.addBtn}>Add Question</button>
-        <button type="submit" className={styles.submitBtn}>{title.includes('Create') ? 'Create' : 'Save Changes'}</button>
+        <button type="button" onClick={addQuestion} className={styles.addBtn}>
+          Add Question
+        </button>
+        <button type="submit" className={styles.submitBtn}>
+          {title.includes("Create") ? "Create" : "Save Changes"}
+        </button>
       </form>
-      <button onClick={onClose} className={styles.cancelBtn}>Cancel</button>
+      <button onClick={onClose} className={styles.cancelBtn}>
+        Cancel
+      </button>
     </div>
   );
 }

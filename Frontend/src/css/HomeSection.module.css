@@ -43,9 +43,9 @@
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 1;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
   animation: pulse 3s ease-in-out infinite;
-  border-radius: 50%;  /* Ensure circle */
+  border-radius: 50%;
 }
 
 .section-home-img {
