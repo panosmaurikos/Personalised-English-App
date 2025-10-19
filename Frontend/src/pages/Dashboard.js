@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../css/Dashboard.module.css";
+import { Button, Select, Input, DatePicker, Space } from "antd";
+import dayjs from "dayjs";
+import "antd/dist/reset.css";
 
 function ProgressRing({ value, color = "#007bff", size = 70, text }) {
   const radius = 30;
@@ -65,6 +68,15 @@ function ProgressRing({ value, color = "#007bff", size = 70, text }) {
 }
 
 function Dashboard() {
+  // Filter/group state
+  const [filterDate, setFilterDate] = useState("");
+  const [filterScore, setFilterScore] = useState("");
+  const [filterLevel, setFilterLevel] = useState("");
+  const [filterAvgTime, setFilterAvgTime] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [groupBy, setGroupBy] = useState("");
+
+  // Data state
   const [history, setHistory] = useState([]);
   const [mistakes, setMistakes] = useState([]);
   const [misconceptions, setMisconceptions] = useState([]);
@@ -72,6 +84,68 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+
+  // Helper: format date/time
+  function formatDateTime(dt) {
+    const d = new Date(dt);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, "0");
+    const minutes = String(d.getMinutes()).padStart(2, "0");
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  }
+
+  // Filtering logic
+  const filteredHistory = history.filter((h) => {
+    let pass = true;
+    if (filterDate) {
+      const d = new Date(h.completed_at);
+      const filter = new Date(filterDate);
+      pass =
+        pass &&
+        d.getFullYear() === filter.getFullYear() &&
+        d.getMonth() === filter.getMonth() &&
+        d.getDate() === filter.getDate();
+    }
+    if (filterScore) {
+      pass = pass && h.score >= parseFloat(filterScore);
+    }
+    if (filterLevel) {
+      pass = pass && h.level === filterLevel;
+    }
+    if (filterAvgTime) {
+      pass = pass && h.avg_time >= parseFloat(filterAvgTime);
+    }
+    if (filterType) {
+      pass = pass && h.test_type === filterType;
+    }
+    return pass;
+  });
+
+  // Grouping logic
+  function groupHistory(data) {
+    if (!groupBy) return [{ group: null, items: data }];
+    const groups = {};
+    data.forEach((h) => {
+      let key = "";
+      if (groupBy === "date") {
+        key = formatDateTime(h.completed_at).split(" ")[0];
+      } else if (groupBy === "score") {
+        key = `${Math.floor(h.score / 10) * 10}%+`;
+      } else if (groupBy === "level") {
+        key = h.level;
+      } else if (groupBy === "avg_time") {
+        key = `${Math.floor(h.avg_time)}s+`;
+      } else if (groupBy === "type") {
+        key = h.test_type;
+      }
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(h);
+    });
+    return Object.entries(groups).map(([group, items]) => ({ group, items }));
+  }
+  const groupedHistory = groupHistory(filteredHistory);
 
   const capitalize = (str) =>
     str && typeof str === "string"
@@ -345,7 +419,7 @@ function Dashboard() {
               </li>
             ))}
           </ul>
-          {/* Αφαίρεση του επιπλέον link - κρατάμε μόνο το message */}
+          {/* Remove extra link - keep only the message */}
           <div
             style={{
               color: "#2563eb",
@@ -359,58 +433,225 @@ function Dashboard() {
         </section>
       )}
 
+      {/* History Section with Filter/Group Controls and Complex Grouping */}
       <div className={styles.historySection}>
-        <h3>
-          <img
-            src="https://img.icons8.com/color/28/clock--v1.png  "
-            alt="history"
-            className={styles.historyIcon}
-          />
-          Test History
+        <h3
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            fontSize: "1.18em",
+            color: "#2563eb",
+            marginBottom: 8,
+          }}
+        >
+          <span style={{ display: "flex", alignItems: "center" }}>
+            <img
+              src="https://img.icons8.com/color/28/clock--v1.png  "
+              alt="history"
+              className={styles.historyIcon}
+              style={{ marginRight: 4 }}
+            />
+            Test History
+          </span>
         </h3>
-        {Array.isArray(history) && history.length === 0 ? (
-          <div className={styles.listEmpty}>No tests taken yet.</div>
+        {/* Filter/Group Controls with Ant Design */}
+        <div
+          style={{
+            marginBottom: 18,
+            background: "#f6f8fc",
+            borderRadius: 8,
+            padding: "16px 18px",
+            display: "flex",
+            gap: 18,
+            flexWrap: "wrap",
+            alignItems: "center",
+            boxShadow: "0 1px 4px rgba(60,100,180,0.07)",
+          }}
+        >
+          <Space wrap>
+            <span style={{ fontWeight: 500 }}>
+              Date:{" "}
+              <DatePicker
+                value={filterDate ? dayjs(filterDate) : null}
+                onChange={(d) => setFilterDate(d ? d.format("YYYY-MM-DD") : "")}
+                style={{ borderRadius: 4 }}
+              />
+            </span>
+            <span style={{ fontWeight: 500 }}>
+              Score ≥{" "}
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={filterScore}
+                onChange={(e) => setFilterScore(e.target.value)}
+                style={{ width: 80 }}
+              />
+            </span>
+            <span style={{ fontWeight: 500 }}>
+              Level:{" "}
+              <Select
+                value={filterLevel}
+                onChange={(v) => setFilterLevel(v)}
+                style={{ width: 120 }}
+                options={[
+                  { value: "", label: "All" },
+                  { value: "Beginner", label: "Beginner" },
+                  { value: "Intermediate", label: "Intermediate" },
+                  { value: "Advanced", label: "Advanced" },
+                ]}
+              />
+            </span>
+            <span style={{ fontWeight: 500 }}>
+              Avg Time ≥{" "}
+              <Input
+                type="number"
+                min={0}
+                step={0.01}
+                value={filterAvgTime}
+                onChange={(e) => setFilterAvgTime(e.target.value)}
+                style={{ width: 80 }}
+              />
+            </span>
+            <span style={{ fontWeight: 500 }}>
+              Type:{" "}
+              <Select
+                value={filterType}
+                onChange={(v) => setFilterType(v)}
+                style={{ width: 120 }}
+                options={[
+                  { value: "", label: "All" },
+                  { value: "regular", label: "Regular" },
+                  { value: "personalized", label: "Personalized" },
+                ]}
+              />
+            </span>
+            <span style={{ fontWeight: 500 }}>
+              Group by:{" "}
+              <Select
+                value={groupBy}
+                onChange={(v) => setGroupBy(v)}
+                style={{ width: 120 }}
+                options={[
+                  { value: "", label: "None" },
+                  { value: "date", label: "Date" },
+                  { value: "score", label: "Score" },
+                  { value: "level", label: "Level" },
+                  { value: "avg_time", label: "Avg Time" },
+                  { value: "type", label: "Type" },
+                ]}
+              />
+            </span>
+            <Button
+              type="primary"
+              size="large"
+              style={{ fontWeight: 600 }}
+              onClick={() => {
+                setFilterDate("");
+                setFilterScore("");
+                setFilterLevel("");
+                setFilterAvgTime("");
+                setFilterType("");
+                setGroupBy("");
+              }}
+            >
+              Reset
+            </Button>
+          </Space>
+        </div>
+        {/* Grouped Table */}
+        {filteredHistory.length === 0 ? (
+          <div className={styles.listEmpty} style={{ marginTop: 12 }}>
+            No tests found for selected filters.
+          </div>
         ) : (
-          <table className={styles.historyTable}>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Score</th>
-                <th>Level</th>
-                <th>Avg Time</th>
-                <th>Type</th>
-              </tr>
-            </thead>
-            <tbody>
-              {history.map((h) => (
-                <tr key={h.test_id}>
-                  <td>{(() => {
-                    const d = new Date(h.completed_at);
-                    const day = String(d.getDate()).padStart(2, '0');
-                    const month = String(d.getMonth() + 1).padStart(2, '0');
-                    const year = d.getFullYear();
-                    const hours = String(d.getHours()).padStart(2, '0');
-                    const minutes = String(d.getMinutes()).padStart(2, '0');
-                    return `${day}/${month}/${year} ${hours}:${minutes}`;
-                  })()}</td>
-                  <td>{h.score.toFixed(2)}%</td>
-                  <td>{h.level}</td>
-                  <td>{h.avg_time.toFixed(2)}s</td>
-                  <td>
-                    {h.test_type === 'personalized' ? (
-                      <span className={styles.testTypePersonalized}>
-                        Personalized
-                      </span>
-                    ) : (
-                      <span className={styles.testTypeRegular}>
-                        Regular
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          groupedHistory.map(({ group, items }) => (
+            <div key={group || "all"} style={{ marginBottom: group ? 18 : 0 }}>
+              {group && (
+                <div
+                  style={{
+                    fontWeight: 600,
+                    fontSize: "1.08em",
+                    color: "#4173b3",
+                    marginBottom: 6,
+                    background: "#eaf2fb",
+                    borderRadius: 6,
+                    padding: "6px 12px",
+                    boxShadow: "0 1px 4px rgba(60,100,180,0.04)",
+                  }}
+                >
+                  {groupBy.charAt(0).toUpperCase() + groupBy.slice(1)}: {group}
+                </div>
+              )}
+              <table
+                className={styles.historyTable}
+                style={{
+                  borderRadius: 8,
+                  overflow: "hidden",
+                  boxShadow: "0 1px 6px rgba(60,100,180,0.07)",
+                  marginTop: 4,
+                }}
+              >
+                <thead style={{ background: "#eaf2fb" }}>
+                  <tr>
+                    <th style={{ padding: "8px 0" }}>Date</th>
+                    <th style={{ padding: "8px 0" }}>Score</th>
+                    <th style={{ padding: "8px 0" }}>Level</th>
+                    <th style={{ padding: "8px 0" }}>Avg Time</th>
+                    <th style={{ padding: "8px 0" }}>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((h) => (
+                    <tr key={h.test_id} style={{ background: "#fff" }}>
+                      <td style={{ padding: "8px 0" }}>
+                        {formatDateTime(h.completed_at)}
+                      </td>
+                      <td style={{ padding: "8px 0" }}>
+                        {h.score.toFixed(2)}%
+                      </td>
+                      <td style={{ padding: "8px 0" }}>{h.level}</td>
+                      <td style={{ padding: "8px 0" }}>
+                        {h.avg_time.toFixed(2)}s
+                      </td>
+                      <td style={{ padding: "8px 0" }}>
+                        {h.test_type === "personalized" ? (
+                          <span
+                            className={styles.testTypePersonalized}
+                            style={{
+                              background: "#f5a524",
+                              color: "#fff",
+                              borderRadius: 6,
+                              padding: "4px 14px",
+                              fontWeight: 600,
+                              boxShadow: "0 1px 4px rgba(245,165,36,0.09)",
+                            }}
+                          >
+                            Personalized
+                          </span>
+                        ) : (
+                          <span
+                            className={styles.testTypeRegular}
+                            style={{
+                              background: "#4fc3f7",
+                              color: "#fff",
+                              borderRadius: 6,
+                              padding: "4px 14px",
+                              fontWeight: 600,
+                              boxShadow: "0 1px 4px rgba(79,195,247,0.09)",
+                            }}
+                          >
+                            Regular
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))
         )}
       </div>
     </div>

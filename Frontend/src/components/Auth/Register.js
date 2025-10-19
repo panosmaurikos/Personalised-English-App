@@ -41,7 +41,7 @@ const Register = ({ onToggle, register, handleToast }) => {
 
     // Call the register function passed as a prop
     await register(form);
-    setForm({ username: "", email: "", password: "", role: "" }); // Καθαρισμός state μετά το register
+    setForm({ username: "", email: "", password: "", role: "" }); // Clear form after submission
   };
 
   const showError = (msg) => {
