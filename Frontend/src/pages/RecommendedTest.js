@@ -9,6 +9,8 @@ function RecommendedTest() {
   const [showResult, setShowResult] = useState(false);
   const [score, setScore] = useState(0);
   const [isListening, setIsListening] = useState(false);
+  const [startTime, setStartTime] = useState(Date.now());
+  const [responseTimes, setResponseTimes] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,6 +22,11 @@ function RecommendedTest() {
       .then((data) => setQuestions(data))
       .catch(() => setQuestions([]));
   }, []);
+
+  // Reset startTime when step changes
+  useEffect(() => {
+    setStartTime(Date.now());
+  }, [step]);
   useEffect(() => {
     if (
       showResult &&
@@ -33,9 +40,13 @@ function RecommendedTest() {
         selected_option: answers[i] || "",
         correct_option: getCorrectOptionString(q),
       }));
+      // Calculate avg_time from responseTimes
+      const avgTime = responseTimes.length === 0
+        ? 0
+        : responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length;
       const payload = {
         score: (score / questions.length) * 100,
-        avg_time: 0, // Optional: add avg_time calculation
+        avg_time: avgTime,
         answers: answersPayload,
       };
       fetch(`${process.env.REACT_APP_API_URL}/complete-test`, {
@@ -49,7 +60,7 @@ function RecommendedTest() {
         // Optional: reload dashboard, show message, etc
       });
     }
-  }, [showResult, questions, answers, score]);
+  }, [showResult, questions, answers, score, responseTimes]);
 
   // Play TTS for listening questions
   const playTTS = useCallback((text) => {
@@ -61,6 +72,9 @@ function RecommendedTest() {
   }, []);
 
   const handleOption = (option) => {
+    // Track time taken for this question
+    const timeTaken = (Date.now() - startTime) / 1000;
+    setResponseTimes((prev) => [...prev, timeTaken]);
     setAnswers((prev) => [...prev, option]);
     if (step < questions.length - 1) {
       setStep((s) => s + 1);
