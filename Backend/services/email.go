@@ -15,13 +15,14 @@ func SendNoReplyEmail(to, subject, body string) error {
 	smtpHost := os.Getenv("SMTP_HOST")
 	smtpPort := os.Getenv("SMTP_PORT")
 
+	// Check required SMTP environment variables
 	if from == "" || pass == "" || smtpHost == "" || smtpPort == "" {
-		return fmt.Errorf("SMTP credentials not set")
+		return fmt.Errorf("smtp credentials not set")
 	}
 
 	addr := smtpHost + ":" + smtpPort
 
-	// Setup message
+	// Build email message headers and body
 	msg := "From: " + from + "\r\n" +
 		"To: " + to + "\r\n" +
 		"Subject: " + subject + "\r\n" +
@@ -32,54 +33,55 @@ func SendNoReplyEmail(to, subject, body string) error {
 	// Connect (plain) and then upgrade to TLS with STARTTLS
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
-		return fmt.Errorf("Dial error: %w", err)
+		return fmt.Errorf("dial error: %w", err)
 	}
 	defer conn.Close()
 
+	// Create SMTP client
 	client, err := smtp.NewClient(conn, smtpHost)
 	if err != nil {
-		return fmt.Errorf("SMTP client error: %w", err)
+		return fmt.Errorf("smtp client error: %w", err)
 	}
 	defer client.Quit()
 
-	// STARTTLS
+	// Upgrade connection to TLS if supported
 	tlsconfig := &tls.Config{
 		ServerName: smtpHost,
 	}
 	if ok, _ := client.Extension("STARTTLS"); ok {
 		if err = client.StartTLS(tlsconfig); err != nil {
-			return fmt.Errorf("STARTTLS error: %w", err)
+			return fmt.Errorf("starttls error: %w", err)
 		}
 	}
 
-	// Auth
+	// Authenticate with SMTP server
 	auth := smtp.PlainAuth("", from, pass, smtpHost)
 	if err = client.Auth(auth); err != nil {
-		return fmt.Errorf("SMTP auth error: %w", err)
+		return fmt.Errorf("smtp auth error: %w", err)
 	}
 
 	// Set sender and recipient
 	if err = client.Mail(from); err != nil {
-		return fmt.Errorf("MAIL FROM error: %w", err)
+		return fmt.Errorf("mail from error: %w", err)
 	}
-	for _, addr := range strings.Split(to, ",") {
-		if err = client.Rcpt(strings.TrimSpace(addr)); err != nil {
-			return fmt.Errorf("RCPT TO error: %w", err)
+	for _, recipient := range strings.Split(to, ",") {
+		if err = client.Rcpt(strings.TrimSpace(recipient)); err != nil {
+			return fmt.Errorf("rcpt to error: %w", err)
 		}
 	}
 
-	// Data
+	// Send email data
 	w, err := client.Data()
 	if err != nil {
-		return fmt.Errorf("DATA error: %w", err)
+		return fmt.Errorf("data error: %w", err)
 	}
 	_, err = w.Write([]byte(msg))
 	if err != nil {
-		return fmt.Errorf("Write error: %w", err)
+		return fmt.Errorf("write error: %w", err)
 	}
 	err = w.Close()
 	if err != nil {
-		return fmt.Errorf("Close error: %w", err)
+		return fmt.Errorf("close error: %w", err)
 	}
 
 	return nil
