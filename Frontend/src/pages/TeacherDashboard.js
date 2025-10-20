@@ -319,9 +319,16 @@ function TeacherDashboard() {
         <button
           className={styles.createBtn}
           style={{ background: "#6c757d" }}
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/")}
         >
-          Back
+          ← Back to Home
+        </button>
+        <button
+          className={styles.createBtn}
+          style={{ background: "#17a2b8" }}
+          onClick={() => fetchTests()}
+        >
+          🔄 Refresh
         </button>
         <button
           className={styles.createBtn}
