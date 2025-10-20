@@ -259,12 +259,24 @@ function TeacherClassrooms() {
 
   return (
     <div className={styles.dashboard}>
-      <button
-        className={styles.backBtn}
-        onClick={() => navigate("/teacher-dashboard")}
-      >
-        Back to Dashboard
-      </button>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '1rem' }}>
+        <button
+          className={styles.backBtn}
+          onClick={() => navigate("/teacher-dashboard")}
+        >
+          ← Back to Dashboard
+        </button>
+        <button
+          className={styles.backBtn}
+          onClick={() => {
+            fetchClassrooms();
+            fetchTests();
+          }}
+          style={{ background: '#17a2b8' }}
+        >
+          🔄 Refresh
+        </button>
+      </div>
 
       <h2 className={styles.title}>My Classrooms</h2>
 

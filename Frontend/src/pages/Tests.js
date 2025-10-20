@@ -97,13 +97,22 @@ function Tests() {
 
   return (
     <div className={styles["test-container"]}>
-      <button
-        className={styles["test-retry-btn"]} // Reusing test-retry-btn style for consistency
-        style={{ background: "#6c757d", marginBottom: "1rem" }}
-        onClick={() => navigate(-1)}
-      >
-        Back
-      </button>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '1rem' }}>
+        <button
+          className={styles["test-retry-btn"]}
+          style={{ background: "#6c757d" }}
+          onClick={() => navigate(-1)}
+        >
+          ← Back
+        </button>
+        <button
+          className={styles["test-retry-btn"]}
+          style={{ background: "#17a2b8" }}
+          onClick={() => window.location.reload()}
+        >
+          🔄 Restart Test
+        </button>
+      </div>
       <div className={styles["test-card"]}>
         <h2 className={styles["test-title"]}>Quick English Level Test</h2>
         <p className={styles["test-desc"]}>

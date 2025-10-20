@@ -106,16 +106,25 @@ function StudentClassrooms() {
           <span className={styles.icon}>🏫</span>
           My Classrooms
         </h3>
-        <button
-          className={styles.joinBtn}
-          onClick={() => {
-            setShowJoinForm(!showJoinForm);
-            setError("");
-            setSuccess("");
-          }}
-        >
-          {showJoinForm ? "Cancel" : "+ Join Classroom"}
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            className={styles.joinBtn}
+            onClick={() => fetchClassrooms()}
+            style={{ background: '#17a2b8' }}
+          >
+            🔄 Refresh
+          </button>
+          <button
+            className={styles.joinBtn}
+            onClick={() => {
+              setShowJoinForm(!showJoinForm);
+              setError("");
+              setSuccess("");
+            }}
+          >
+            {showJoinForm ? "Cancel" : "+ Join Classroom"}
+          </button>
+        </div>
       </div>
 
       {success && <div className={styles.success}>{success}</div>}

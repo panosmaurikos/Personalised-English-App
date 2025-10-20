@@ -196,12 +196,104 @@ function Dashboard() {
   const latestTest =
     Array.isArray(history) && history.length > 0 ? history[0] : null;
 
+  const handleRefresh = async () => {
+    setLoading(true);
+    setError("");
+    const token = localStorage.getItem("jwt");
+    if (!token) {
+      setError("Please log in first!");
+      setLoading(false);
+      setHistory([]);
+      setMistakes([]);
+      setMisconceptions([]);
+      setPhenomenonMistakes([]);
+      return;
+    }
+
+    try {
+      // Fetch history
+      const hRes = await fetch(
+        `${process.env.REACT_APP_API_URL}/user-history`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      let historyData = [];
+      if (hRes.ok) {
+        historyData = await hRes.json();
+      }
+      setHistory(Array.isArray(historyData) ? historyData : []);
+
+      // Fetch mistakes
+      const mRes = await fetch(
+        `${process.env.REACT_APP_API_URL}/user-mistakes`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      let mistakesData = [];
+      if (mRes.ok) {
+        mistakesData = await mRes.json();
+      }
+      setMistakes(Array.isArray(mistakesData) ? mistakesData : []);
+
+      // Fetch misconceptions for latest test
+      let misconceptionsData = [];
+      if (Array.isArray(historyData) && historyData.length > 0) {
+        const latestTestId = historyData[0].test_id;
+        const misconRes = await fetch(
+          `${process.env.REACT_APP_API_URL}/misconceptions/${latestTestId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        if (misconRes.ok) {
+          misconceptionsData = await misconRes.json();
+        }
+      }
+      setMisconceptions(
+        Array.isArray(misconceptionsData) ? misconceptionsData : []
+      );
+
+      // Fetch phenomenon mistakes
+      const pRes = await fetch(
+        `${process.env.REACT_APP_API_URL}/user-phenomenon-mistakes`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      let pData = [];
+      if (pRes.ok) {
+        pData = await pRes.json();
+      }
+      setPhenomenonMistakes(Array.isArray(pData) ? pData : []);
+
+      setLoading(false);
+    } catch (err) {
+      setError(err.message || "Unknown error");
+      setLoading(false);
+      setHistory([]);
+      setMistakes([]);
+      setMisconceptions([]);
+      setPhenomenonMistakes([]);
+    }
+  };
+
   return (
     <div className={styles.dashboardContainer}>
       <header className={styles.header}>
-        <button className={styles.navBtn} onClick={() => navigate("/")}>
-          <span>&larr;</span> Home
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button className={styles.navBtn} onClick={() => navigate("/")}>
+            <span>&larr;</span> Home
+          </button>
+          <button
+            className={styles.navBtn}
+            onClick={handleRefresh}
+            style={{ background: '#17a2b8' }}
+          >
+            🔄 Refresh
+          </button>
+        </div>
         <div className={styles.headerContent}>
           <img
             src="https://img.icons8.com/color/64/graduation-cap.png  "

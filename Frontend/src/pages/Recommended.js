@@ -29,15 +29,45 @@ function Recommended() {
       });
   }, []);
 
+  const handleRefresh = () => {
+    setLoading(true);
+    setError("");
+    const token = localStorage.getItem("jwt");
+    fetch(`${process.env.REACT_APP_API_URL}/recommended-questions`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch recommended questions");
+        return res.json();
+      })
+      .then((data) => {
+        setQuestions(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message || "Unknown error");
+        setLoading(false);
+      });
+  };
+
   return (
     <div className={styles.container}>
-      <button
-        className={styles.startBtn}
-        style={{ background: "#6c757d", marginBottom: "1rem" }}
-        onClick={() => navigate(-1)}
-      >
-        Back
-      </button>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '1rem' }}>
+        <button
+          className={styles.startBtn}
+          style={{ background: "#6c757d" }}
+          onClick={() => navigate(-1)}
+        >
+          ← Back
+        </button>
+        <button
+          className={styles.startBtn}
+          style={{ background: "#17a2b8" }}
+          onClick={handleRefresh}
+        >
+          🔄 Refresh
+        </button>
+      </div>
       <div className={styles.header}>
         <img
           src="https://img.icons8.com/color/36/idea.png"
