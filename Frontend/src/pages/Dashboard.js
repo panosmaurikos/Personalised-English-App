@@ -136,7 +136,10 @@ function Dashboard() {
       } else if (groupBy === "level") {
         key = h.level;
       } else if (groupBy === "avg_time") {
-        key = `${Math.floor(h.avg_time)}s+`;
+        // Group by 2-second intervals
+        const interval = 2;
+        const lower = Math.floor(h.avg_time / interval) * interval;
+        key = `${lower}s+`;
       } else if (groupBy === "type") {
         key = h.test_type;
       }
@@ -237,7 +240,6 @@ function Dashboard() {
     }
     fetchData();
   }, []);
-
   if (loading)
     return (
       <div className={styles.loaderBox}>
@@ -567,7 +569,15 @@ function Dashboard() {
           </div>
         ) : (
           groupedHistory.map(({ group, items }) => (
-            <div key={group || "all"} style={{ marginBottom: group ? 18 : 0 }}>
+            <div
+              key={group || "all"}
+              style={{
+                marginBottom: group ? 18 : 0,
+                width: "100%",
+                marginLeft: 0,
+                marginRight: 0,
+              }}
+            >
               {group && (
                 <div
                   style={{
@@ -591,6 +601,7 @@ function Dashboard() {
                   overflow: "hidden",
                   boxShadow: "0 1px 6px rgba(60,100,180,0.07)",
                   marginTop: 4,
+                  tableLayout: "fixed",
                 }}
               >
                 <thead style={{ background: "#eaf2fb" }}>
