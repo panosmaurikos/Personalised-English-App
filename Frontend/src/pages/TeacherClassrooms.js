@@ -146,6 +146,7 @@ function TeacherClassrooms() {
       );
       if (res.ok) {
         await fetchClassroomDetails(selectedClassroom.id);
+        await fetchClassrooms(); // Refresh the main list
         setSelectedTestId("");
         setError("");
       } else {
@@ -194,6 +195,7 @@ function TeacherClassrooms() {
       );
       if (res.ok) {
         await fetchClassroomDetails(selectedClassroom.id);
+        await fetchClassrooms(); // Refresh the main list
         setError("");
       } else {
         const data = await res.json();
@@ -220,6 +222,7 @@ function TeacherClassrooms() {
       );
       if (res.ok) {
         await fetchClassroomDetails(selectedClassroom.id);
+        await fetchClassrooms(); // Refresh the main list
         setError("");
       } else {
         const data = await res.json();

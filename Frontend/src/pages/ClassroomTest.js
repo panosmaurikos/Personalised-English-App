@@ -10,6 +10,7 @@ function ClassroomTest() {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const [startTimes, setStartTimes] = useState({});
+  const [endTimes, setEndTimes] = useState({});
   const [showResult, setShowResult] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -17,6 +18,20 @@ function ClassroomTest() {
   useEffect(() => {
     fetchTestQuestions();
   }, [testId]);
+
+
+  // Record start time when question changes
+  useEffect(() => {
+    if (questions.length > 0 && questions[currentStep]) {
+      const questionId = questions[currentStep].id;
+      if (!startTimes[questionId]) {
+        setStartTimes(prev => ({
+          ...prev,
+          [questionId]: Date.now()
+        }));
+      }
+    }
+  }, [currentStep, questions]);
 
   const fetchTestQuestions = async () => {
     try {
@@ -45,38 +60,42 @@ function ClassroomTest() {
 
   const handleOption = (optionLetter) => {
     const currentQuestion = questions[currentStep];
+    const currentEndTime = Date.now();
 
-    // Record start time if not already recorded
-    if (!startTimes[currentQuestion.id]) {
-      setStartTimes(prev => ({
-        ...prev,
-        [currentQuestion.id]: Date.now()
-      }));
-    }
-
-    // Save answer
-    setAnswers(prev => ({
-      ...prev,
+    // Update all state immediately
+    const updatedAnswers = {
+      ...answers,
       [currentQuestion.id]: optionLetter
-    }));
+    };
+
+    const updatedEndTimes = {
+      ...endTimes,
+      [currentQuestion.id]: currentEndTime
+    };
+
+    setEndTimes(updatedEndTimes);
+    setAnswers(updatedAnswers);
 
     // Move to next question after a short delay
     setTimeout(() => {
       if (currentStep < questions.length - 1) {
         setCurrentStep(currentStep + 1);
       } else {
-        // Submit test
-        submitTest();
+        // Submit test with updated values
+        submitTestWithAnswers(updatedAnswers, updatedEndTimes);
       }
     }, 300);
   };
 
-  const submitTest = async () => {
+  const submitTestWithAnswers = async (finalAnswers, finalEndTimes) => {
     const answersPayload = questions.map((q) => {
-      const startTime = startTimes[q.id] || Date.now();
-      const responseTime = (Date.now() - startTime) / 1000;
-      const selectedAnswer = answers[q.id] || '';
+      const startTime = startTimes[q.id];
+      const endTime = finalEndTimes[q.id];
+      const responseTime = (startTime && endTime) ? (endTime - startTime) / 1000 : 0;
+      const selectedAnswer = finalAnswers[q.id] || '';
       const isCorrect = selectedAnswer === q.correct_answer;
+
+      console.log(`Question ${q.id}: selected=${selectedAnswer}, correct=${q.correct_answer}, isCorrect=${isCorrect}, responseTime=${responseTime}s`);
 
       return {
         question_id: q.id,

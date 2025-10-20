@@ -308,16 +308,37 @@ function Dashboard() {
             />
             Areas to Improve
           </h3>
+          <p style={{ fontSize: '0.9rem', color: '#6c757d', marginBottom: '1rem' }}>
+            Categories where you made the most mistakes in your last test
+          </p>
           <ul className={styles.list}>
             {Array.isArray(misconceptions) && misconceptions.length === 0 ? (
               <li className={styles.listEmpty}>
-                No significant weaknesses detected.
+                Great job! No significant weaknesses detected.
               </li>
             ) : (
               misconceptions.map((m) => (
                 <li key={m.category}>
-                  <span className={styles.cat}>{capitalize(m.category)}</span>:{" "}
-                  <b>{m.percentage.toFixed(2)}%</b>
+                  <span className={styles.cat}>{capitalize(m.category)}</span>
+                  <div style={{ marginTop: '0.25rem' }}>
+                    <div style={{
+                      width: '100%',
+                      height: '8px',
+                      background: '#e9ecef',
+                      borderRadius: '4px',
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{
+                        width: `${m.percentage}%`,
+                        height: '100%',
+                        background: m.percentage > 50 ? '#dc3545' : m.percentage > 30 ? '#ffc107' : '#17a2b8',
+                        transition: 'width 0.3s'
+                      }} />
+                    </div>
+                    <span style={{ fontSize: '0.85rem', color: '#6c757d' }}>
+                      {m.percentage.toFixed(0)}% of mistakes in this category
+                    </span>
+                  </div>
                 </li>
               ))
             )}

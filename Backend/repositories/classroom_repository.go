@@ -62,6 +62,47 @@ func (r *ClassroomRepository) GetClassroomsByTeacher(ctx context.Context, teache
 		if err := rows.Scan(&c.ID, &c.TeacherID, &c.Name, &c.Description, &c.InviteCode, &c.CreatedAt, &c.UpdatedAt); err != nil {
 			return nil, err
 		}
+
+		// Fetch members for this classroom
+		mQuery := `
+			SELECT u.id, u.email, u.role
+			FROM Classroom_members cm
+			JOIN users u ON cm.user_id = u.id
+			WHERE cm.classroom_id = $1`
+		mRows, err := r.db.QueryContext(ctx, mQuery, c.ID)
+		if err != nil {
+			return nil, err
+		}
+		for mRows.Next() {
+			var u models.User
+			if err := mRows.Scan(&u.ID, &u.Email, &u.Role); err != nil {
+				mRows.Close()
+				return nil, err
+			}
+			c.Members = append(c.Members, u)
+		}
+		mRows.Close()
+
+		// Fetch tests for this classroom
+		tQuery := `
+			SELECT t.id, t.teacher_id, t.title, t.description, t.type, t.created_at, t.updated_at
+			FROM Classroom_tests ct
+			JOIN Teachers_tests t ON ct.test_id = t.id
+			WHERE ct.classroom_id = $1`
+		tRows, err := r.db.QueryContext(ctx, tQuery, c.ID)
+		if err != nil {
+			return nil, err
+		}
+		for tRows.Next() {
+			var t models.Test
+			if err := tRows.Scan(&t.ID, &t.TeacherID, &t.Title, &t.Description, &t.Type, &t.CreatedAt, &t.UpdatedAt); err != nil {
+				tRows.Close()
+				return nil, err
+			}
+			c.Tests = append(c.Tests, t)
+		}
+		tRows.Close()
+
 		classrooms = append(classrooms, c)
 	}
 	return classrooms, rows.Err()
