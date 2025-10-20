@@ -345,42 +345,31 @@ function Dashboard() {
             color="#0070f3"
             text={latestTest ? latestTest.level : "--"}
           />
-          <div className={styles.statLabel}>Level</div>
+          <div className={styles.statLabel}>Latest Test Level</div>
           <div className={styles.statValue}>
             {latestTest ? latestTest.level : "--"}
           </div>
         </div>
-        {/* Avg time */}
+        {/* Avg time of all tests as icon + value */}
         <div className={styles.statCard}>
-          <ProgressRing
-            value={
-              latestTest
-                ? Math.max(5, Math.min(100, (40 - latestTest.avg_time) * 2.5))
-                : 0
-            }
-            color="#f5a524"
-            text={latestTest ? latestTest.avg_time.toFixed(1) + "s" : "--"}
-          />
-          <div className={styles.statLabel}>Average Time</div>
-          <div className={styles.statValue}>
-            {latestTest ? latestTest.avg_time.toFixed(2) + "s" : "--"}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 32, color: '#f5a524', marginBottom: 2 }} role="img" aria-label="timer">⏱️</span>
+            <span style={{ fontSize: 22, fontWeight: 700, color: '#1e293b' }}>
+              {Array.isArray(history) && history.length > 0
+                ? (history.reduce((sum, h) => sum + (h.avg_time || 0), 0) / history.length).toFixed(2) + "s"
+                : "--"}
+            </span>
           </div>
+          <div className={styles.statLabel}>Average Time of all tests</div>
         </div>
-        {/* Mistakes */}
+        {/* Top Mistakes as icon + value */}
         <div className={styles.statCard}>
-          <ProgressRing
-            value={
-              Array.isArray(mistakes) && mistakes.length
-                ? Math.min(100, mistakes[0].count * 10)
-                : 0
-            }
-            color="#f31260"
-            text={
-              Array.isArray(mistakes) && mistakes.length
-                ? mistakes[0].count
-                : "0"
-            }
-          />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 32, color: '#f31260', marginBottom: 2 }} role="img" aria-label="mistake">⚠️</span>
+            <span style={{ fontSize: 22, fontWeight: 700, color: '#1e293b' }}>
+              {Array.isArray(mistakes) && mistakes.length ? mistakes[0].count : "0"}
+            </span>
+          </div>
           <div className={styles.statLabel}>Top Mistakes</div>
           <div className={styles.statValue}>
             {Array.isArray(mistakes) && mistakes.length

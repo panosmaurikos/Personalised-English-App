@@ -1,8 +1,7 @@
-import React from "react";
 import styles from "../css/Dashboard.module.css";
 
 function ProgressRing({ value, color = "#007bff", size = 70, text }) {
-  const radius = 30;
+  const radius = 35;
   const stroke = 7;
   const normalizedRadius = radius - stroke * 0.5;
   const circumference = normalizedRadius * 2 * Math.PI;
@@ -10,8 +9,11 @@ function ProgressRing({ value, color = "#007bff", size = 70, text }) {
   const strokeDashoffset = circumference - (pct / 100) * circumference;
 
   let fontSize = 16;
-  if (text && text.length > 5) fontSize = 13;
-  if (text && text.length > 12) fontSize = 10.5;
+  console.log('====================================');
+  console.log(text.length);
+  console.log('====================================');
+  if (text && text.length > 10) fontSize = 8;
+  else if (text && text.length > 5) fontSize = 11;
 
   return (
     <svg height={size} width={size} className={styles.progressRing}>
