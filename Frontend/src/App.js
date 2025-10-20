@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import {
   Routes,
   Route,
@@ -26,13 +26,7 @@ function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isHiddenPage =
-    location.pathname === "/tests" ||
-    location.pathname === "/dashboard" ||
-    location.pathname === "/teacher-dashboard" ||
-    location.pathname === "/recommended" ||
-    location.pathname === "/login";
-
+  // Auth check: log out and redirect if user is deleted from DB
   const { toast, setToast, handleToast } = useToast();
   const {
     showAuth,
@@ -46,6 +40,35 @@ function App() {
     register,
     logout,
   } = useAuth(handleToast);
+
+  useEffect(() => {
+    async function checkAuth() {
+      const token = localStorage.getItem("jwt");
+      if (!token) return;
+      try {
+        const res = await fetch(`${process.env.REACT_APP_API_URL}/user`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) {
+          logout();
+          <Navigate to="/login" replace />;
+        }
+      } catch {
+        logout();
+        <Navigate to="/login" replace />;
+      }
+    }
+    checkAuth();
+  }, [navigate, logout]);
+
+  const isHiddenPage =
+    location.pathname === "/tests" ||
+    location.pathname === "/dashboard" ||
+    location.pathname === "/teacher-dashboard" ||
+    location.pathname === "/recommended" ||
+    location.pathname === "/login";
+
+  // ...existing code...
 
   const {
     showContactPopup,

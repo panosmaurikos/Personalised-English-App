@@ -80,6 +80,26 @@ func (h *Handler) SetupRouter(
 	protectedRouter := r.PathPrefix("/").Subrouter()
 	protectedRouter.Use(api.AuthMiddleware)
 
+	// Current user info endpoint
+	protectedRouter.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := r.Context().Value("userID").(int)
+		if !ok || userID == 0 {
+			http.Error(w, `{"error": "User ID not found in context"}`, http.StatusUnauthorized)
+			return
+		}
+		var username, email, role string
+		err := db.QueryRow("SELECT username, email, role FROM users WHERE id = $1", userID).Scan(&username, &email, &role)
+		if err != nil {
+			http.Error(w, `{"error": "User not found"}`, http.StatusNotFound)
+			return
+		}
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"username": username,
+			"email":    email,
+			"role":     role,
+		})
+	}).Methods("GET")
+
 	protectedRouter.HandleFunc("/complete-test", func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
 			Score    float64 `json:"score"`
