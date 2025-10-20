@@ -1,12 +1,14 @@
+
 # Personalised English Learning App
 
-A comprehensive web application for personalized English language learning with adaptive testing, classroom management, and AI-powered recommendations.
+A comprehensive web application for personalized English language learning with adaptive testing, classroom management, and fuzzy logic-powered recommendations.
 
 ## Features
 
+
 ### For Students
 - **Adaptive Testing**: Take dynamic tests that adjust to your skill level
-- **Personalized Practice**: Get AI-powered question recommendations based on your mistakes and learning patterns
+- **Personalized Practice**: Get question recommendations based on your mistakes and learning patterns using fuzzy logic
 - **Progress Tracking**: Monitor your performance with detailed analytics and statistics
 - **Classroom Integration**: Join classrooms with invite codes and take teacher-assigned tests
 - **Performance Analytics**:
@@ -14,6 +16,7 @@ A comprehensive web application for personalized English language learning with 
   - Mistake categorization (Grammar, Vocabulary, Reading, Listening)
   - Response time analysis
   - Level progression (Beginner → Intermediate → Advanced)
+
 
 ### For Teachers
 - **Test Management**: Create, edit, and manage custom tests with multiple question types
