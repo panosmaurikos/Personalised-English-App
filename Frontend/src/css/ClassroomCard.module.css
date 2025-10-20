@@ -1,0 +1,101 @@
+.card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.title {
+  font-size: 1.4rem;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.desc {
+  font-size: 1rem;
+  color: #6c757d;
+  margin-bottom: 1rem;
+}
+
+.inviteSection {
+  background: #f8f9fa;
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.inviteLabel {
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: #495057;
+  margin: 0;
+}
+
+.inviteCode {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #007bff;
+  background: #fff;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  border: 2px dashed #007bff;
+  letter-spacing: 2px;
+  font-family: 'Courier New', monospace;
+}
+
+.info {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.viewBtn,
+.manageBtn,
+.resultsBtn {
+  padding: 0.5rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+.viewBtn {
+  background: #17a2b8;
+  color: white;
+}
+.viewBtn:hover {
+  background: #138496;
+}
+
+.manageBtn {
+  background: #ffc107;
+  color: #212529;
+}
+.manageBtn:hover {
+  background: #e0a800;
+}
+
+.resultsBtn {
+  background: #20c997;
+  color: #fff;
+}
+.resultsBtn:hover {
+  background: #17b187;
+}

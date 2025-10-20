@@ -4,6 +4,7 @@ import styles from "../css/Dashboard.module.css";
 import { Button, Select, Input, DatePicker, Space } from "antd";
 import dayjs from "dayjs";
 import "antd/dist/reset.css";
+import StudentClassrooms from "../components/Classroom/StudentClassrooms";
 
 function ProgressRing({ value, color = "#007bff", size = 70, text }) {
   const radius = 30;
@@ -434,6 +435,9 @@ function Dashboard() {
           </div>
         </section>
       )}
+
+      {/* Student Classrooms Section */}
+      <StudentClassrooms />
 
       {/* History Section with Filter/Group Controls and Complex Grouping */}
       <div className={styles.historySection}>

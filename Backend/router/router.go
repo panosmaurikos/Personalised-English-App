@@ -30,6 +30,7 @@ func (h *Handler) SetupRouter(
 	forgotPasswordHandler http.Handler,
 	resetPasswordOTPHandler http.Handler,
 	testService *services.TestService,
+	classroomService *services.ClassroomService,
 	db *sql.DB,
 ) http.Handler {
 	r := mux.NewRouter()
@@ -631,6 +632,200 @@ func (h *Handler) SetupRouter(
 		}
 		w.WriteHeader(http.StatusNoContent)
 	}).Methods("DELETE")
+
+	// Teacher classroom routes
+	teacherRouter.HandleFunc("/classrooms", func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Context().Value("userID").(int)
+		classrooms, err := classroomService.GetClassrooms(r.Context(), userID)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to fetch classrooms: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(classrooms)
+	}).Methods("GET")
+
+	teacherRouter.HandleFunc("/classrooms", func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Context().Value("userID").(int)
+		var req models.CreateClassroomRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, `{"error": "Invalid request body"}`, http.StatusBadRequest)
+			return
+		}
+		classroom, err := classroomService.CreateClassroom(r.Context(), userID, &req)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to create classroom: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(classroom)
+	}).Methods("POST")
+
+	teacherRouter.HandleFunc("/classrooms/{id}", func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Context().Value("userID").(int)
+		vars := mux.Vars(r)
+		id, _ := strconv.Atoi(vars["id"])
+		classroom, err := classroomService.GetClassroom(r.Context(), userID, id)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to fetch classroom: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(classroom)
+	}).Methods("GET")
+
+	teacherRouter.HandleFunc("/classrooms/{id}/assign-test", func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Context().Value("userID").(int)
+		vars := mux.Vars(r)
+		classroomID, _ := strconv.Atoi(vars["id"])
+		var req models.AssignTestRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, `{"error": "Invalid request body"}`, http.StatusBadRequest)
+			return
+		}
+		err := classroomService.AssignTest(r.Context(), userID, classroomID, &req)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to assign test: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{"message": "Test assigned successfully"})
+	}).Methods("POST")
+
+	teacherRouter.HandleFunc("/classrooms/{id}/results/{testID}", func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Context().Value("userID").(int)
+		vars := mux.Vars(r)
+		classroomID, _ := strconv.Atoi(vars["id"])
+		testID, _ := strconv.Atoi(vars["testID"])
+		results, err := classroomService.GetClassroomResults(r.Context(), userID, classroomID, testID)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to fetch results: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(results)
+	}).Methods("GET")
+
+	teacherRouter.HandleFunc("/students/{studentID}/tests/{testID}/details", func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Context().Value("userID").(int)
+		vars := mux.Vars(r)
+		studentID, _ := strconv.Atoi(vars["studentID"])
+		testID, _ := strconv.Atoi(vars["testID"])
+		details, err := classroomService.GetStudentTestDetails(r.Context(), userID, studentID, testID)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to fetch student test details: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(details)
+	}).Methods("GET")
+
+	teacherRouter.HandleFunc("/classrooms/{classroomID}/members/{studentID}", func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Context().Value("userID").(int)
+		vars := mux.Vars(r)
+		classroomID, _ := strconv.Atoi(vars["classroomID"])
+		studentID, _ := strconv.Atoi(vars["studentID"])
+		err := classroomService.RemoveStudentFromClassroom(r.Context(), userID, classroomID, studentID)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to remove student: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}).Methods("DELETE")
+
+	teacherRouter.HandleFunc("/classrooms/{classroomID}/tests/{testID}", func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Context().Value("userID").(int)
+		vars := mux.Vars(r)
+		classroomID, _ := strconv.Atoi(vars["classroomID"])
+		testID, _ := strconv.Atoi(vars["testID"])
+		err := classroomService.RemoveTestFromClassroom(r.Context(), userID, classroomID, testID)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to remove test: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}).Methods("DELETE")
+
+	// Student classroom routes (protected, but for students)
+	protectedRouter.HandleFunc("/classrooms/join", func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := r.Context().Value("userID").(int)
+		if !ok {
+			http.Error(w, `{"error": "Unauthorized"}`, http.StatusUnauthorized)
+			return
+		}
+		var req models.JoinClassroomRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, `{"error": "Invalid request body"}`, http.StatusBadRequest)
+			return
+		}
+		classroom, err := classroomService.JoinClassroom(r.Context(), userID, &req)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to join classroom: `+err.Error()+`"}`, http.StatusBadRequest)
+			return
+		}
+		json.NewEncoder(w).Encode(classroom)
+	}).Methods("POST")
+
+	protectedRouter.HandleFunc("/student/classrooms", func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := r.Context().Value("userID").(int)
+		if !ok {
+			http.Error(w, `{"error": "Unauthorized"}`, http.StatusUnauthorized)
+			return
+		}
+		classrooms, err := classroomService.GetStudentClassrooms(r.Context(), userID)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to fetch classrooms: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(classrooms)
+	}).Methods("GET")
+
+	protectedRouter.HandleFunc("/student/classrooms/{id}", func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := r.Context().Value("userID").(int)
+		if !ok {
+			http.Error(w, `{"error": "Unauthorized"}`, http.StatusUnauthorized)
+			return
+		}
+		vars := mux.Vars(r)
+		id, _ := strconv.Atoi(vars["id"])
+		classroom, err := classroomService.GetClassroom(r.Context(), userID, id)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to fetch classroom: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(classroom)
+	}).Methods("GET")
+
+	// Get test questions (accessible by both teachers and students)
+	protectedRouter.HandleFunc("/tests/{id}/questions", func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		id, _ := strconv.Atoi(vars["id"])
+		test, err := testService.GetTestByID(r.Context(), id)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to fetch test questions: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+		if test == nil {
+			http.Error(w, `{"error": "Test not found"}`, http.StatusNotFound)
+			return
+		}
+		json.NewEncoder(w).Encode(test.Questions)
+	}).Methods("GET")
+
+	protectedRouter.HandleFunc("/tests/submit", func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := r.Context().Value("userID").(int)
+		if !ok {
+			http.Error(w, `{"error": "Unauthorized"}`, http.StatusUnauthorized)
+			return
+		}
+		var req models.SubmitTestResultRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, `{"error": "Invalid request body"}`, http.StatusBadRequest)
+			return
+		}
+		err := classroomService.SubmitTeacherTestResult(r.Context(), userID, &req)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to submit test: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{"message": "Test submitted successfully"})
+	}).Methods("POST")
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:3000"},

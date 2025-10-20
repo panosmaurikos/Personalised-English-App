@@ -19,6 +19,7 @@ function TeacherDashboard() {
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [error, setError] = useState("");
   const [isResultsOpen, setIsResultsOpen] = useState(false);
+  const [testResults, setTestResults] = useState(null);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const navigate = useNavigate();
@@ -258,9 +259,48 @@ function TeacherDashboard() {
     }
   };
 
-  const openResults = (test) => {
+  const openResults = async (test) => {
     setSelectedTest(test);
     setIsResultsOpen(true);
+
+    // Fetch which classrooms have this test assigned
+    try {
+      const token = localStorage.getItem("jwt");
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/teacher/classrooms`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (res.ok) {
+        const allClassrooms = await res.json();
+        // Filter classrooms that have this test
+        const classroomsWithTest = allClassrooms.filter(c =>
+          c.tests && c.tests.some(t => t.id === test.id)
+        );
+
+        // For each classroom, get results
+        const resultsPromises = classroomsWithTest.map(async (classroom) => {
+          const resultsRes = await fetch(
+            `${process.env.REACT_APP_API_URL}/teacher/classrooms/${classroom.id}/results/${test.id}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          if (resultsRes.ok) {
+            const results = await resultsRes.json();
+            return { classroom, results };
+          }
+          return { classroom, results: [] };
+        });
+
+        const allResults = await Promise.all(resultsPromises);
+        setTestResults(allResults);
+      }
+    } catch (err) {
+      console.error("Error fetching results:", err);
+      setTestResults([]);
+    }
   };
 
   const resetForm = () => {
@@ -275,14 +315,23 @@ function TeacherDashboard() {
 
   return (
     <div className={styles.dashboard}>
-      <button
-        className={styles.createBtn} // Reusing createBtn style for consistency, adjust if needed
-        style={{ background: "#6c757d", marginBottom: "1rem" }}
-        onClick={() => navigate(-1)}
-      >
-        Back
-      </button>
-      <h2 className={styles.title}>Teacher Dashboard</h2>
+      <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
+        <button
+          className={styles.createBtn}
+          style={{ background: "#6c757d" }}
+          onClick={() => navigate(-1)}
+        >
+          Back
+        </button>
+        <button
+          className={styles.createBtn}
+          style={{ background: "#28a745" }}
+          onClick={() => navigate("/teacher-classrooms")}
+        >
+          Manage Classrooms
+        </button>
+      </div>
+      <h2 className={styles.title}>Teacher Dashboard - Tests</h2>
       {error && <div className={styles.error}>{error}</div>}
 
       <div className={styles.toolbar}>
@@ -376,26 +425,96 @@ function TeacherDashboard() {
         </div>
       )}
 
-      {/* Results & Stats Modal (placeholders) */}
+      {/* Results & Stats Modal */}
       {isResultsOpen && selectedTest && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
             <h3 className={styles.modalTitle}>
               Results & Stats — {selectedTest.title}
             </h3>
-            <div className={styles.statsGrid}>
-              <div className={styles.statCard}>Average score: —</div>
-              <div className={styles.statCard}>Median score: —</div>
-              <div className={styles.statCard}>Completion rate: —</div>
-              <div className={styles.statCard}>Time on test: —</div>
-            </div>
-            <h4 className={styles.sectionTitle}>Students</h4>
-            <div className={styles.resultsPanel}>
-              {/* placeholder table/list */}
-              <div className={styles.placeholder}>No results yet.</div>
-            </div>
+
+            {testResults === null ? (
+              <div className={styles.placeholder}>Loading results...</div>
+            ) : testResults.length === 0 ? (
+              <div className={styles.placeholder}>
+                This test is not assigned to any classroom yet.
+                <br />
+                <small>Go to "Manage Classrooms" to assign this test.</small>
+              </div>
+            ) : (
+              <>
+                {testResults.map(({ classroom, results }) => {
+                  const allScores = results.map(r => r.score);
+                  const avgScore = allScores.length > 0
+                    ? (allScores.reduce((a, b) => a + b, 0) / allScores.length).toFixed(2)
+                    : '—';
+                  const totalStudents = classroom.members?.length || 0;
+                  const completedStudents = results.length;
+
+                  return (
+                    <div key={classroom.id} style={{ marginBottom: '2rem' }}>
+                      <h4 className={styles.sectionTitle}>
+                        {classroom.name} ({completedStudents}/{totalStudents} completed)
+                      </h4>
+
+                      <div className={styles.statsGrid} style={{ marginBottom: '1rem' }}>
+                        <div className={styles.statCard}>
+                          Average score: {avgScore}%
+                        </div>
+                        <div className={styles.statCard}>
+                          Completed: {completedStudents}/{totalStudents}
+                        </div>
+                      </div>
+
+                      {results.length > 0 ? (
+                        <div className={styles.resultsPanel}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead>
+                              <tr style={{ background: '#f8f9fa' }}>
+                                <th style={{ padding: '0.75rem', textAlign: 'left' }}>Student</th>
+                                <th style={{ padding: '0.75rem', textAlign: 'center' }}>Score</th>
+                                <th style={{ padding: '0.75rem', textAlign: 'center' }}>Correct/Total</th>
+                                <th style={{ padding: '0.75rem', textAlign: 'center' }}>Avg Time</th>
+                                <th style={{ padding: '0.75rem', textAlign: 'center' }}>Completed At</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {results.map((result, idx) => (
+                                <tr key={idx} style={{ borderBottom: '1px solid #dee2e6' }}>
+                                  <td style={{ padding: '0.75rem' }}>{result.email}</td>
+                                  <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                                    {result.score.toFixed(2)}%
+                                  </td>
+                                  <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                                    {result.correct_answers}/{result.total_questions}
+                                  </td>
+                                  <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                                    {result.avg_time?.toFixed(2) || '—'}s
+                                  </td>
+                                  <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                                    {new Date(result.completed_at).toLocaleString()}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className={styles.placeholder}>
+                          No students have completed this test yet.
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </>
+            )}
+
             <button
-              onClick={() => setIsResultsOpen(false)}
+              onClick={() => {
+                setIsResultsOpen(false);
+                setTestResults(null);
+              }}
               className={styles.closeBtn}
             >
               Close

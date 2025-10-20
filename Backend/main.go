@@ -35,10 +35,12 @@ func main() {
 	resetPasswordOTPHandler := api.NewResetPasswordOTPHandler(userSvc)
 	testRepo := repositories.NewTestRepository(db)
 	testService := services.NewTestService(testRepo, userRepo)
+	classroomRepo := repositories.NewClassroomRepository(db)
+	classroomService := services.NewClassroomService(classroomRepo, userRepo, testRepo)
 
 	// 4. Router setup
 	h := router.NewHandler()
-	r := h.SetupRouter(registerHandler, loginHandler, forgotPasswordHandler, resetPasswordOTPHandler, testService, db)
+	r := h.SetupRouter(registerHandler, loginHandler, forgotPasswordHandler, resetPasswordOTPHandler, testService, classroomService, db)
 
 	// 6. Server setup
 	srv := &http.Server{

@@ -10,6 +10,7 @@ import HomePage from "./pages/HomePage";
 import Tests from "./pages/Tests";
 import Dashboard from "./pages/Dashboard";
 import TeacherDashboard from "./pages/TeacherDashboard";
+import TeacherClassrooms from "./pages/TeacherClassrooms";
 import Recommended from "./pages/Recommended";
 import AuthModal from "./components/AuthModal";
 import useAuth from "./hooks/useAuth";
@@ -21,6 +22,7 @@ import Navbar from "./components/Navbar";
 import ContactPopup from "./components/ContactPopup";
 import ContactFab from "./components/ContactFab";
 import RecommendedTest from "./pages/RecommendedTest";
+import ClassroomTest from "./pages/ClassroomTest";
 
 function App() {
   const location = useLocation();
@@ -65,8 +67,10 @@ function App() {
     location.pathname === "/tests" ||
     location.pathname === "/dashboard" ||
     location.pathname === "/teacher-dashboard" ||
+    location.pathname === "/teacher-classrooms" ||
     location.pathname === "/recommended" ||
-    location.pathname === "/login";
+    location.pathname === "/login" ||
+    location.pathname.startsWith("/classroom-test");
 
   // ...existing code...
 
@@ -171,12 +175,20 @@ function App() {
             </PrivateRoute>
           }
         />
-        {/* Teacher-only route */}
+        {/* Teacher-only routes */}
         <Route
           path="/teacher-dashboard"
           element={
             <PrivateRoute requiredRole="teacher">
               <TeacherDashboard />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/teacher-classrooms"
+          element={
+            <PrivateRoute requiredRole="teacher">
+              <TeacherClassrooms />
             </PrivateRoute>
           }
         />
@@ -194,6 +206,14 @@ function App() {
           element={
             <PrivateRoute>
               <RecommendedTest />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/classroom-test/:testId"
+          element={
+            <PrivateRoute requiredRole="student">
+              <ClassroomTest />
             </PrivateRoute>
           }
         />

@@ -614,3 +614,53 @@ CREATE TABLE IF NOT EXISTS test_answers (
     is_correct BOOLEAN,
     answered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Classroom tables
+CREATE TABLE IF NOT EXISTS Classrooms (
+    id SERIAL PRIMARY KEY,
+    teacher_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    invite_code VARCHAR(10) UNIQUE NOT NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS Classroom_members (
+    id SERIAL PRIMARY KEY,
+    classroom_id INTEGER NOT NULL REFERENCES Classrooms(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    joined_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(classroom_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS Classroom_tests (
+    id SERIAL PRIMARY KEY,
+    classroom_id INTEGER NOT NULL REFERENCES Classrooms(id) ON DELETE CASCADE,
+    test_id INTEGER NOT NULL REFERENCES Teachers_tests(id) ON DELETE CASCADE,
+    assigned_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(classroom_id, test_id)
+);
+
+-- Table to store student results from teacher tests
+CREATE TABLE IF NOT EXISTS Teacher_test_results (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    test_id INTEGER NOT NULL REFERENCES Teachers_tests(id) ON DELETE CASCADE,
+    score REAL NOT NULL,
+    total_questions INTEGER NOT NULL,
+    correct_answers INTEGER NOT NULL,
+    avg_response_time REAL,
+    taken_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table to store individual answers for teacher tests
+CREATE TABLE IF NOT EXISTS Teacher_test_answers (
+    id SERIAL PRIMARY KEY,
+    result_id INTEGER NOT NULL REFERENCES Teacher_test_results(id) ON DELETE CASCADE,
+    question_id INTEGER NOT NULL REFERENCES Teachers_questions(id) ON DELETE CASCADE,
+    selected_answer VARCHAR(1) NOT NULL,
+    is_correct BOOLEAN NOT NULL,
+    response_time REAL,
+    answered_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

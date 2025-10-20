@@ -126,3 +126,8 @@ func (s *TestService) DeleteTest(ctx context.Context, userID, testID int) error 
 	}
 	return s.repo.DeleteTest(ctx, testID)
 }
+
+// GetTestByID returns a test by ID without authorization checks (for students to take tests)
+func (s *TestService) GetTestByID(ctx context.Context, testID int) (*models.Test, error) {
+	return s.repo.GetTestByID(ctx, testID)
+}
