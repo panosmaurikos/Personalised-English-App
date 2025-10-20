@@ -33,7 +33,7 @@ function ProgressRing({ value, color = "#007bff", size = 70, text }) {
         fill="transparent"
         strokeWidth={stroke}
         strokeLinecap="round"
-        className={styles.progressRingCircle}
+        style={{ transition: "stroke-dashoffset 1s" }}
         strokeDasharray={circumference + " " + circumference}
         strokeDashoffset={strokeDashoffset}
         r={normalizedRadius}
@@ -47,13 +47,19 @@ function ProgressRing({ value, color = "#007bff", size = 70, text }) {
         height={size * 0.33}
       >
         <div
-          className={
-            fontSize === 16
-              ? styles.progressRingText
-              : fontSize === 13
-              ? `${styles.progressRingText} ${styles.progressRingTextSm}`
-              : `${styles.progressRingText} ${styles.progressRingTextXs}`
-          }
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100%",
+            width: "100%",
+            fontWeight: "bold",
+            fontSize: fontSize,
+            color: "#222",
+            textAlign: "center",
+            lineHeight: 1.05,
+            wordBreak: "break-word",
+          }}
         >
           {text || `${pct}%`}
         </div>
@@ -243,7 +249,7 @@ function Dashboard() {
     );
   if (error)
     return (
-  <div className={`${styles.dashboardContainer} ${styles.errorMessage}`}> 
+      <div className={styles.dashboardContainer} style={{ color: "red" }}>
         {error}
       </div>
     );
@@ -417,7 +423,14 @@ function Dashboard() {
             ))}
           </ul>
           {/* Remove extra link - keep only the message */}
-          <div className={styles.phenomenonMessage}>
+          <div
+            style={{
+              color: "#2563eb",
+              fontWeight: 500,
+              marginTop: 8,
+              fontSize: 16,
+            }}
+          >
             Practice these phenomena in Personalized Practice
           </div>
         </section>
@@ -428,28 +441,50 @@ function Dashboard() {
 
       {/* History Section with Filter/Group Controls and Complex Grouping */}
       <div className={styles.historySection}>
-        <h3 className={styles.historyTitle}>
-          <span className={styles.historyTitleSpan}>
+        <h3
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            fontSize: "1.18em",
+            color: "#2563eb",
+            marginBottom: 8,
+          }}
+        >
+          <span style={{ display: "flex", alignItems: "center" }}>
             <img
               src="https://img.icons8.com/color/28/clock--v1.png  "
               alt="history"
               className={styles.historyIcon}
+              style={{ marginRight: 4 }}
             />
             Test History
           </span>
         </h3>
         {/* Filter/Group Controls with Ant Design */}
-        <div className={styles.filterGroupBox}>
+        <div
+          style={{
+            marginBottom: 18,
+            background: "#f6f8fc",
+            borderRadius: 8,
+            padding: "16px 18px",
+            display: "flex",
+            gap: 18,
+            flexWrap: "wrap",
+            alignItems: "center",
+            boxShadow: "0 1px 4px rgba(60,100,180,0.07)",
+          }}
+        >
           <Space wrap>
-            <span className={styles.filterLabel}>
+            <span style={{ fontWeight: 500 }}>
               Date:{" "}
               <DatePicker
                 value={filterDate ? dayjs(filterDate) : null}
                 onChange={(d) => setFilterDate(d ? d.format("YYYY-MM-DD") : "")}
-                className={styles.filterDatePicker}
+                style={{ borderRadius: 4 }}
               />
             </span>
-            <span className={styles.filterLabel}>
+            <span style={{ fontWeight: 500 }}>
               Score ≥{" "}
               <Input
                 type="number"
@@ -457,15 +492,15 @@ function Dashboard() {
                 max={100}
                 value={filterScore}
                 onChange={(e) => setFilterScore(e.target.value)}
-                className={styles.filterInput}
+                style={{ width: 80 }}
               />
             </span>
-            <span className={styles.filterLabel}>
+            <span style={{ fontWeight: 500 }}>
               Level:{" "}
               <Select
                 value={filterLevel}
                 onChange={(v) => setFilterLevel(v)}
-                className={styles.filterSelect}
+                style={{ width: 120 }}
                 options={[
                   { value: "", label: "All" },
                   { value: "Beginner", label: "Beginner" },
@@ -474,7 +509,7 @@ function Dashboard() {
                 ]}
               />
             </span>
-            <span className={styles.filterLabel}>
+            <span style={{ fontWeight: 500 }}>
               Avg Time ≥{" "}
               <Input
                 type="number"
@@ -482,15 +517,15 @@ function Dashboard() {
                 step={0.01}
                 value={filterAvgTime}
                 onChange={(e) => setFilterAvgTime(e.target.value)}
-                className={styles.filterInput}
+                style={{ width: 80 }}
               />
             </span>
-            <span className={styles.filterLabel}>
+            <span style={{ fontWeight: 500 }}>
               Type:{" "}
               <Select
                 value={filterType}
                 onChange={(v) => setFilterType(v)}
-                className={styles.filterSelect}
+                style={{ width: 120 }}
                 options={[
                   { value: "", label: "All" },
                   { value: "regular", label: "Regular" },
@@ -498,12 +533,12 @@ function Dashboard() {
                 ]}
               />
             </span>
-            <span className={styles.filterLabel}>
+            <span style={{ fontWeight: 500 }}>
               Group by:{" "}
               <Select
                 value={groupBy}
                 onChange={(v) => setGroupBy(v)}
-                className={styles.filterSelect}
+                style={{ width: 120 }}
                 options={[
                   { value: "", label: "None" },
                   { value: "date", label: "Date" },
@@ -517,7 +552,7 @@ function Dashboard() {
             <Button
               type="primary"
               size="large"
-              className={styles.filterResetBtn}
+              style={{ fontWeight: 600 }}
               onClick={() => {
                 setFilterDate("");
                 setFilterScore("");
@@ -533,44 +568,97 @@ function Dashboard() {
         </div>
         {/* Grouped Table */}
         {filteredHistory.length === 0 ? (
-          <div className={`${styles.listEmpty} ${styles.listEmptyMargin}`}> 
+          <div className={styles.listEmpty} style={{ marginTop: 12 }}>
             No tests found for selected filters.
           </div>
         ) : (
           groupedHistory.map(({ group, items }) => (
             <div
               key={group || "all"}
-              className={group ? styles.groupedTableGroup : styles.groupedTable}
+              style={{
+                marginBottom: group ? 18 : 0,
+                width: "100%",
+                marginLeft: 0,
+                marginRight: 0,
+              }}
             >
               {group && (
-                <div className={styles.groupedTableHeader}>
+                <div
+                  style={{
+                    fontWeight: 600,
+                    fontSize: "1.08em",
+                    color: "#4173b3",
+                    marginBottom: 6,
+                    background: "#eaf2fb",
+                    borderRadius: 6,
+                    padding: "6px 12px",
+                    boxShadow: "0 1px 4px rgba(60,100,180,0.04)",
+                  }}
+                >
                   {groupBy.charAt(0).toUpperCase() + groupBy.slice(1)}: {group}
                 </div>
               )}
               <table
                 className={styles.historyTable}
+                style={{
+                  borderRadius: 8,
+                  overflow: "hidden",
+                  boxShadow: "0 1px 6px rgba(60,100,180,0.07)",
+                  marginTop: 4,
+                  tableLayout: "fixed",
+                }}
               >
-                <thead className={styles.historyTableHead}>
+                <thead style={{ background: "#eaf2fb" }}>
                   <tr>
-                    <th className={styles.historyTableCell}>Date</th>
-                    <th className={styles.historyTableCell}>Score</th>
-                    <th className={styles.historyTableCell}>Level</th>
-                    <th className={styles.historyTableCell}>Avg Time</th>
-                    <th className={styles.historyTableCell}>Type</th>
+                    <th style={{ padding: "8px 0" }}>Date</th>
+                    <th style={{ padding: "8px 0" }}>Score</th>
+                    <th style={{ padding: "8px 0" }}>Level</th>
+                    <th style={{ padding: "8px 0" }}>Avg Time</th>
+                    <th style={{ padding: "8px 0" }}>Type</th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((h) => (
-                    <tr key={h.test_id} className={styles.historyTableRow}>
-                      <td className={styles.historyTableCell}>{formatDateTime(h.completed_at)}</td>
-                      <td className={styles.historyTableCell}>{h.score.toFixed(2)}%</td>
-                      <td className={styles.historyTableCell}>{h.level}</td>
-                      <td className={styles.historyTableCell}>{h.avg_time.toFixed(2)}s</td>
-                      <td className={styles.historyTableCell}>
+                    <tr key={h.test_id} style={{ background: "#fff" }}>
+                      <td style={{ padding: "8px 0" }}>
+                        {formatDateTime(h.completed_at)}
+                      </td>
+                      <td style={{ padding: "8px 0" }}>
+                        {h.score.toFixed(2)}%
+                      </td>
+                      <td style={{ padding: "8px 0" }}>{h.level}</td>
+                      <td style={{ padding: "8px 0" }}>
+                        {h.avg_time.toFixed(2)}s
+                      </td>
+                      <td style={{ padding: "8px 0" }}>
                         {h.test_type === "personalized" ? (
-                          <span className={styles.testTypePersonalizedFilled}>Personalized</span>
+                          <span
+                            className={styles.testTypePersonalized}
+                            style={{
+                              background: "#f5a524",
+                              color: "#fff",
+                              borderRadius: 6,
+                              padding: "4px 14px",
+                              fontWeight: 600,
+                              boxShadow: "0 1px 4px rgba(245,165,36,0.09)",
+                            }}
+                          >
+                            Personalized
+                          </span>
                         ) : (
-                          <span className={styles.testTypeRegularFilled}>Regular</span>
+                          <span
+                            className={styles.testTypeRegular}
+                            style={{
+                              background: "#4fc3f7",
+                              color: "#fff",
+                              borderRadius: 6,
+                              padding: "4px 14px",
+                              fontWeight: 600,
+                              boxShadow: "0 1px 4px rgba(79,195,247,0.09)",
+                            }}
+                          >
+                            Regular
+                          </span>
                         )}
                       </td>
                     </tr>

@@ -1,10 +1,11 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "../css/Tests.module.css";
 
 function ClassroomTest() {
   const { testId } = useParams();
   const navigate = useNavigate();
+  const [test, setTest] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -13,8 +14,11 @@ function ClassroomTest() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    fetchTestQuestions();
+  }, [testId]);
 
-  const fetchTestQuestions = useCallback(async () => {
+  const fetchTestQuestions = async () => {
     try {
       const token = localStorage.getItem("jwt");
       const res = await fetch(
@@ -37,13 +41,7 @@ function ClassroomTest() {
       setError("Failed to load test questions");
       setLoading(false);
     }
-  }, [testId]);
-
-  useEffect(() => {
-    fetchTestQuestions();
-  }, [fetchTestQuestions]);
-
-  // ...existing code...
+  };
 
   const handleOption = (optionLetter) => {
     const currentQuestion = questions[currentStep];
@@ -186,7 +184,8 @@ function ClassroomTest() {
   return (
     <div className={styles["test-container"]}>
       <button
-        className={`${styles["test-retry-btn"]} ${styles["test-back-btn"]}`}
+        className={styles["test-retry-btn"]}
+        style={{ background: "#6c757d", marginBottom: "1rem" }}
         onClick={() => navigate(-1)}
       >
         Back

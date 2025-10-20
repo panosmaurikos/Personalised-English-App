@@ -98,7 +98,8 @@ function Tests() {
   return (
     <div className={styles["test-container"]}>
       <button
-        className={`${styles["test-retry-btn"]} ${styles["test-back-btn"]}`}
+        className={styles["test-retry-btn"]} // Reusing test-retry-btn style for consistency
+        style={{ background: "#6c757d", marginBottom: "1rem" }}
         onClick={() => navigate(-1)}
       >
         Back
