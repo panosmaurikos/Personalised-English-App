@@ -315,17 +315,15 @@ function TeacherDashboard() {
 
   return (
     <div className={styles.dashboard}>
-      <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
+  <div className={styles.topBar}>
         <button
-          className={styles.createBtn}
-          style={{ background: "#6c757d" }}
+          className={`${styles.createBtn} ${styles.backBtn}`}
           onClick={() => navigate(-1)}
         >
           Back
         </button>
         <button
-          className={styles.createBtn}
-          style={{ background: "#28a745" }}
+          className={`${styles.createBtn} ${styles.classroomsBtn}`}
           onClick={() => navigate("/teacher-classrooms")}
         >
           Manage Classrooms
@@ -452,12 +450,12 @@ function TeacherDashboard() {
                   const completedStudents = results.length;
 
                   return (
-                    <div key={classroom.id} style={{ marginBottom: '2rem' }}>
+                    <div key={classroom.id} className={styles.classroomResultsBlock}>
                       <h4 className={styles.sectionTitle}>
                         {classroom.name} ({completedStudents}/{totalStudents} completed)
                       </h4>
 
-                      <div className={styles.statsGrid} style={{ marginBottom: '1rem' }}>
+                      <div className={`${styles.statsGrid} ${styles.statsGridMargin}`}> 
                         <div className={styles.statCard}>
                           Average score: {avgScore}%
                         </div>
@@ -468,32 +466,24 @@ function TeacherDashboard() {
 
                       {results.length > 0 ? (
                         <div className={styles.resultsPanel}>
-                          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                            <thead>
-                              <tr style={{ background: '#f8f9fa' }}>
-                                <th style={{ padding: '0.75rem', textAlign: 'left' }}>Student</th>
-                                <th style={{ padding: '0.75rem', textAlign: 'center' }}>Score</th>
-                                <th style={{ padding: '0.75rem', textAlign: 'center' }}>Correct/Total</th>
-                                <th style={{ padding: '0.75rem', textAlign: 'center' }}>Avg Time</th>
-                                <th style={{ padding: '0.75rem', textAlign: 'center' }}>Completed At</th>
+                          <table className={styles.resultsTable}>
+                            <thead className={styles.resultsTableHead}>
+                              <tr className={styles.resultsTableRowHead}>
+                                <th className={styles.resultsTableCellLeft}>Student</th>
+                                <th className={styles.resultsTableCell}>Score</th>
+                                <th className={styles.resultsTableCell}>Correct/Total</th>
+                                <th className={styles.resultsTableCell}>Avg Time</th>
+                                <th className={styles.resultsTableCell}>Completed At</th>
                               </tr>
                             </thead>
                             <tbody>
                               {results.map((result, idx) => (
-                                <tr key={idx} style={{ borderBottom: '1px solid #dee2e6' }}>
-                                  <td style={{ padding: '0.75rem' }}>{result.email}</td>
-                                  <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                                    {result.score.toFixed(2)}%
-                                  </td>
-                                  <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                                    {result.correct_answers}/{result.total_questions}
-                                  </td>
-                                  <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                                    {result.avg_time?.toFixed(2) || '—'}s
-                                  </td>
-                                  <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                                    {new Date(result.completed_at).toLocaleString()}
-                                  </td>
+                                <tr key={idx} className={styles.resultsTableRow}>
+                                  <td className={styles.resultsTableCellLeft}>{result.email}</td>
+                                  <td className={styles.resultsTableCell}>{result.score.toFixed(2)}%</td>
+                                  <td className={styles.resultsTableCell}>{result.correct_answers}/{result.total_questions}</td>
+                                  <td className={styles.resultsTableCell}>{result.avg_time?.toFixed(2) || '—'}s</td>
+                                  <td className={styles.resultsTableCell}>{new Date(result.completed_at).toLocaleString()}</td>
                                 </tr>
                               ))}
                             </tbody>

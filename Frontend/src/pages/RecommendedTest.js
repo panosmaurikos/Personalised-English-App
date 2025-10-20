@@ -143,7 +143,7 @@ function RecommendedTest() {
           ({q.category}, diff: {q.difficulty})
         </span>
       </div>
-      <div style={{ marginBottom: 10 }}>
+  <div className={styles.questionTextBlock}>
         {q.question}
         {q.category === "listening" && (
           <button

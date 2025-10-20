@@ -1,3 +1,28 @@
+.questionTextBlock {
+  margin-bottom: 10px;
+}
+.backBtn {
+  background: #6c757d;
+  margin-bottom: 1rem;
+}
+.loading {
+  color: #0070f3;
+  font-weight: 500;
+  text-align: center;
+  margin: 2rem 0;
+}
+.error {
+  color: red;
+  font-weight: 500;
+  text-align: center;
+  margin: 2rem 0;
+}
+.noRecommendations {
+  color: #888;
+  font-style: italic;
+  text-align: center;
+  margin: 2rem 0;
+}
 .container {
   max-width: 650px;
   margin: 40px auto;

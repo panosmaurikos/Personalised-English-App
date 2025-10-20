@@ -32,8 +32,7 @@ function Recommended() {
   return (
     <div className={styles.container}>
       <button
-        className={styles.startBtn}
-        style={{ background: "#6c757d", marginBottom: "1rem" }}
+        className={`${styles.startBtn} ${styles.backBtn}`}
         onClick={() => navigate(-1)}
       >
         Back
@@ -47,11 +46,11 @@ function Recommended() {
         <h2>Practice: Personalized Test</h2>
       </div>
       {loading ? (
-        <div>Loading...</div>
+        <div className={styles.loading}>Loading...</div>
       ) : error ? (
-        <div style={{ color: "red" }}>{error}</div>
+        <div className={styles.error}>{error}</div>
       ) : questions.length === 0 ? (
-        <div>No recommendations found!</div>
+        <div className={styles.noRecommendations}>No recommendations found!</div>
       ) : (
         <div>
           <ul className={styles.list}>

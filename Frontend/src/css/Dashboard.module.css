@@ -1,3 +1,120 @@
+.progressRingTextSm {
+  font-size: 13px;
+}
+.progressRingTextXs {
+  font-size: 10.5px;
+}
+.phenomenonMessage {
+  color: #2563eb;
+  font-weight: 500;
+  margin-top: 8px;
+  font-size: 16px;
+}
+.progressRingCircle {
+  transition: stroke-dashoffset 1s;
+}
+.progressRingText {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  font-weight: bold;
+  color: #222;
+  text-align: center;
+  line-height: 1.05;
+  word-break: break-word;
+}
+.errorMessage {
+  color: red;
+}
+.historyTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.18em;
+  color: #2563eb;
+  margin-bottom: 8px;
+}
+.historyTitleSpan {
+  display: flex;
+  align-items: center;
+}
+.filterGroupBox {
+  margin-bottom: 18px;
+  background: #f6f8fc;
+  border-radius: 8px;
+  padding: 16px 18px;
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  align-items: center;
+  box-shadow: 0 1px 4px rgba(60,100,180,0.07);
+}
+.filterLabel {
+  font-weight: 500;
+}
+.filterDatePicker {
+  border-radius: 4px !important;
+}
+.filterInput {
+  width: 80px !important;
+}
+.filterSelect {
+  width: 120px !important;
+}
+.filterResetBtn {
+  font-weight: 600 !important;
+}
+.listEmptyMargin {
+  margin-top: 12px;
+}
+.groupedTableGroup {
+  margin-bottom: 18px;
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+}
+.groupedTable {
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+}
+.groupedTableHeader {
+  font-weight: 600;
+  font-size: 1.08em;
+  color: #4173b3;
+  margin-bottom: 6px;
+  background: #eaf2fb;
+  border-radius: 6px;
+  padding: 6px 12px;
+  box-shadow: 0 1px 4px rgba(60,100,180,0.04);
+}
+.historyTableHead {
+  background: #eaf2fb;
+}
+.historyTableCell {
+  padding: 8px 0;
+}
+.historyTableRow {
+  background: #fff;
+}
+.testTypePersonalizedFilled {
+  background: #f5a524;
+  color: #fff;
+  border-radius: 6px;
+  padding: 4px 14px;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(245,165,36,0.09);
+}
+.testTypeRegularFilled {
+  background: #4fc3f7;
+  color: #fff;
+  border-radius: 6px;
+  padding: 4px 14px;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(79,195,247,0.09);
+}
 /* Test Type Labels */
 .testTypeRegular {
   background: linear-gradient(90deg, #e3f2fd 0%, #bbdefb 100%);

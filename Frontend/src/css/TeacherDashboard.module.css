@@ -1,3 +1,40 @@
+.topBar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.backBtn {
+  background: #6c757d;
+}
+.classroomsBtn {
+  background: #28a745;
+}
+.classroomResultsBlock {
+  margin-bottom: 2rem;
+}
+.statsGridMargin {
+  margin-bottom: 1rem;
+}
+.resultsTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+.resultsTableHead {
+  background: #f8f9fa;
+}
+.resultsTableRowHead {
+}
+.resultsTableRow {
+  border-bottom: 1px solid #dee2e6;
+}
+.resultsTableCell {
+  padding: 0.75rem;
+  text-align: center;
+}
+.resultsTableCellLeft {
+  padding: 0.75rem;
+  text-align: left;
+}
 .dashboard {
   padding: 4rem 2rem;
   max-width: 1200px;

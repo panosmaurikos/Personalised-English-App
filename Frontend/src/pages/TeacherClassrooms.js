@@ -359,7 +359,7 @@ function TeacherClassrooms() {
               {selectedClassroom.tests && selectedClassroom.tests.length > 0 ? (
                 selectedClassroom.tests.map((test) => (
                   <div key={test.id} className={styles.testItem}>
-                    <div>
+                    <div className={styles.testItemFlex}>
                       <span>{test.title}</span>
                       <span className={styles.testType}>{test.type}</span>
                     </div>
@@ -452,8 +452,7 @@ function TeacherClassrooms() {
                 selectedClassroom.tests.map((test) => (
                   <div
                     key={test.id}
-                    className={styles.testItem}
-                    style={{ cursor: "pointer" }}
+                    className={`${styles.testItem} ${styles.testItemPointer}`}
                     onClick={() => fetchTestResults(test.id)}
                   >
                     <span>{test.title}</span>
