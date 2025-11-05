@@ -94,21 +94,21 @@ func BuildFuzzyEngine() (fuzzy.Engine, *fuzzy.IDVal, *fuzzy.IDVal, *fuzzy.IDVal,
 	cfg := builder.Mamdani()
 	fl := cfg.FuzzyLogic()
 
-	// Define rules (examples as per your design)
-	// If Score Low AND Time Slow THEN Level Beginner
+	// Define rules - Score is more important than time
+	// Low score rules
 	fl.If(scoreVal.Get("low")).And(timeVal.Get("slow")).Then(levelVal.Get("beginner"))
-	// If Score Medium AND Time Normal THEN Level Intermediate
-	fl.If(scoreVal.Get("medium")).And(timeVal.Get("normal")).Then(levelVal.Get("intermediate"))
-	// If Score High AND Time Fast THEN Level Advanced
-	fl.If(scoreVal.Get("high")).And(timeVal.Get("fast")).Then(levelVal.Get("advanced"))
-
-	// Add more rules for better coverage (e.g., cross-combinations)
 	fl.If(scoreVal.Get("low")).And(timeVal.Get("normal")).Then(levelVal.Get("beginner"))
-	fl.If(scoreVal.Get("low")).And(timeVal.Get("fast")).Then(levelVal.Get("intermediate")) // Edge case
-	fl.If(scoreVal.Get("medium")).And(timeVal.Get("slow")).Then(levelVal.Get("beginner"))
+	fl.If(scoreVal.Get("low")).And(timeVal.Get("fast")).Then(levelVal.Get("beginner"))
+
+	// Medium score rules
+	fl.If(scoreVal.Get("medium")).And(timeVal.Get("slow")).Then(levelVal.Get("intermediate"))
+	fl.If(scoreVal.Get("medium")).And(timeVal.Get("normal")).Then(levelVal.Get("intermediate"))
 	fl.If(scoreVal.Get("medium")).And(timeVal.Get("fast")).Then(levelVal.Get("intermediate"))
-	fl.If(scoreVal.Get("high")).And(timeVal.Get("slow")).Then(levelVal.Get("intermediate"))
+
+	// High score rules - even with slow time, still advanced!
+	fl.If(scoreVal.Get("high")).And(timeVal.Get("slow")).Then(levelVal.Get("advanced"))
 	fl.If(scoreVal.Get("high")).And(timeVal.Get("normal")).Then(levelVal.Get("advanced"))
+	fl.If(scoreVal.Get("high")).And(timeVal.Get("fast")).Then(levelVal.Get("advanced"))
 
 	// Build engine
 	engine, err := fl.Engine()

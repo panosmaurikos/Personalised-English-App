@@ -15,11 +15,17 @@ function RecommendedTest() {
 
   useEffect(() => {
     const token = localStorage.getItem("jwt");
-    fetch(`${process.env.REACT_APP_API_URL}/recommended-questions`, {
+    fetch(`${process.env.REACT_APP_API_URL}/personalized-practice-questions`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
-      .then((data) => setQuestions(data))
+      .then((data) => {
+        if (data.questions && Array.isArray(data.questions)) {
+          setQuestions(data.questions);
+        } else {
+          setQuestions([]);
+        }
+      })
       .catch(() => setQuestions([]));
   }, []);
 

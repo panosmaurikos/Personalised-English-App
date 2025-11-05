@@ -21,6 +21,8 @@ function Dashboard() {
   const [mistakes, setMistakes] = useState([]);
   const [misconceptions, setMisconceptions] = useState([]);
   const [phenomenonMistakes, setPhenomenonMistakes] = useState([]);
+  const [lastFiveTests, setLastFiveTests] = useState([]);
+  const [learningPreferences, setLearningPreferences] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -107,6 +109,8 @@ function Dashboard() {
         setMistakes([]);
         setMisconceptions([]);
         setPhenomenonMistakes([]);
+        setLastFiveTests([]);
+        setLearningPreferences(null);
         return;
       }
 
@@ -168,6 +172,32 @@ function Dashboard() {
         }
         setPhenomenonMistakes(Array.isArray(pData) ? pData : []);
 
+        // Fetch last 5 tests with learning preferences
+        const lastFiveRes = await fetch(
+          `${process.env.REACT_APP_API_URL}/last-five-tests`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        let lastFiveData = [];
+        if (lastFiveRes.ok) {
+          lastFiveData = await lastFiveRes.json();
+        }
+        setLastFiveTests(Array.isArray(lastFiveData) ? lastFiveData : []);
+
+        // Fetch learning preferences analysis
+        const prefRes = await fetch(
+          `${process.env.REACT_APP_API_URL}/learning-style-analysis`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        let prefData = null;
+        if (prefRes.ok) {
+          prefData = await prefRes.json();
+        }
+        setLearningPreferences(prefData);
+
         setLoading(false);
       } catch (err) {
         setError(err.message || "Unknown error");
@@ -176,6 +206,8 @@ function Dashboard() {
         setMistakes([]);
         setMisconceptions([]);
         setPhenomenonMistakes([]);
+        setLastFiveTests([]);
+        setLearningPreferences(null);
       }
     }
     fetchData();
@@ -207,6 +239,8 @@ function Dashboard() {
       setMistakes([]);
       setMisconceptions([]);
       setPhenomenonMistakes([]);
+      setLastFiveTests([]);
+      setLearningPreferences(null);
       return;
     }
 
@@ -268,6 +302,32 @@ function Dashboard() {
       }
       setPhenomenonMistakes(Array.isArray(pData) ? pData : []);
 
+      // Fetch last 5 tests with learning preferences
+      const lastFiveRes = await fetch(
+        `${process.env.REACT_APP_API_URL}/last-five-tests`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      let lastFiveData = [];
+      if (lastFiveRes.ok) {
+        lastFiveData = await lastFiveRes.json();
+      }
+      setLastFiveTests(Array.isArray(lastFiveData) ? lastFiveData : []);
+
+      // Fetch learning preferences analysis
+      const prefRes = await fetch(
+        `${process.env.REACT_APP_API_URL}/learning-style-analysis`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      let prefData = null;
+      if (prefRes.ok) {
+        prefData = await prefRes.json();
+      }
+      setLearningPreferences(prefData);
+
       setLoading(false);
     } catch (err) {
       setError(err.message || "Unknown error");
@@ -276,6 +336,8 @@ function Dashboard() {
       setMistakes([]);
       setMisconceptions([]);
       setPhenomenonMistakes([]);
+      setLastFiveTests([]);
+      setLearningPreferences(null);
     }
   };
 
@@ -470,6 +532,97 @@ function Dashboard() {
           >
             Practice these phenomena in Personalized Practice
           </div>
+        </section>
+      )}
+
+      {/* Learning Preferences Section - Based on Last 5 Tests */}
+      {learningPreferences && (
+        <section className={styles.learningPreferencesSection} style={{
+          background: '#fff',
+          borderRadius: '12px',
+          padding: '24px',
+          marginBottom: '24px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+        }}>
+          <h3 style={{
+            fontSize: '1.3rem',
+            color: '#2563eb',
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <span role="img" aria-label="brain">🧠</span>
+            Your Learning Preferences
+          </h3>
+          <p style={{ fontSize: '0.95rem', color: '#6c757d', marginBottom: '20px' }}>
+            Based on your test performance, you learn better with the following question types:
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+            {learningPreferences.recommendations && Object.entries(learningPreferences.recommendations).map(([category, type]) => (
+              <div key={category} style={{
+                background: '#f8f9fa',
+                borderRadius: '8px',
+                padding: '16px',
+                border: '2px solid #e9ecef'
+              }}>
+                <div style={{ fontWeight: 600, color: '#495057', marginBottom: '8px', textTransform: 'capitalize' }}>
+                  {category === 'grammar' ? 'Grammar' :
+                   category === 'vocabulary' ? 'Vocabulary' :
+                   category === 'reading' ? 'Reading' :
+                   category === 'listening' ? 'Listening' :
+                   category === 'speaking' ? 'Speaking' : category}
+                </div>
+                <div style={{
+                  fontSize: '0.9rem',
+                  color: '#fff',
+                  background: type === 'multiple_choice' ? '#17a2b8' :
+                             type === 'fill_in_blank' ? '#28a745' :
+                             type === 'true_false' ? '#ffc107' :
+                             type === 'matching' ? '#6f42c1' :
+                             '#6c757d',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  textAlign: 'center',
+                  fontWeight: 500
+                }}>
+                  {type === 'multiple_choice' ? 'Multiple Choice' :
+                   type === 'fill_in_blank' ? 'Fill in the Blank' :
+                   type === 'true_false' ? 'True/False' :
+                   type === 'matching' ? 'Matching' :
+                   type === 'short_answer' ? 'Short Answer' : type}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {learningPreferences.overall_best_type && (
+            <div style={{
+              marginTop: '20px',
+              padding: '16px',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              borderRadius: '8px',
+              color: '#fff'
+            }}>
+              <div style={{ fontWeight: 600, marginBottom: '8px' }}>
+                🌟 Your best question type:
+              </div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>
+                {learningPreferences.overall_best_type === 'multiple_choice' ? 'Multiple Choice' :
+                 learningPreferences.overall_best_type === 'fill_in_blank' ? 'Fill in the Blank' :
+                 learningPreferences.overall_best_type === 'true_false' ? 'True/False' :
+                 learningPreferences.overall_best_type === 'matching' ? 'Matching' :
+                 learningPreferences.overall_best_type === 'short_answer' ? 'Short Answer' :
+                 learningPreferences.overall_best_type}
+              </div>
+              {learningPreferences.overall_success_rate && (
+                <div style={{ fontSize: '0.9rem', marginTop: '8px', opacity: 0.95 }}>
+                  Success Rate: {(learningPreferences.overall_success_rate * 100).toFixed(1)}%
+                </div>
+              )}
+            </div>
+          )}
         </section>
       )}
 

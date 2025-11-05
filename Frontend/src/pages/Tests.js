@@ -15,6 +15,7 @@ function Tests() {
     restartTest,
     answers,
     getCorrectOptionValue,
+    responseTimes,
   } = useTestLogic();
   const [fuzzyLevel, setFuzzyLevel] = useState("");
   const [error, setError] = useState("");
@@ -31,6 +32,7 @@ function Tests() {
         question_id: q.id,
         selected_option: answers[i] || "",
         correct_option: getCorrectOptionValue(q),
+        response_time: responseTimes[i] || 0,
       }));
       const payload = {
         score: (getScore() / QUESTIONS.length) * 100,
@@ -73,6 +75,7 @@ function Tests() {
     getScore,
     getAvgTime,
     getCorrectOptionValue,
+    responseTimes,
   ]);
 
   const typeBadge = (type) => {
@@ -170,15 +173,19 @@ function Tests() {
                   </div>
                 )}
                 <div className={styles["test-options"]}>
-                  {QUESTIONS[step].options.map((option) => (
-                    <button
-                      key={option}
-                      className={styles["test-option-btn"]}
-                      onClick={() => handleOption(option)}
-                    >
-                      {option}
-                    </button>
-                  ))}
+                  {QUESTIONS[step].options && Array.isArray(QUESTIONS[step].options) ? (
+                    QUESTIONS[step].options.map((option) => (
+                      <button
+                        key={option}
+                        className={styles["test-option-btn"]}
+                        onClick={() => handleOption(option)}
+                      >
+                        {option}
+                      </button>
+                    ))
+                  ) : (
+                    <div>Error loading options for this question</div>
+                  )}
                 </div>
               </div>
             </div>

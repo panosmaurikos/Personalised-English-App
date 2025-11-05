@@ -1,19 +1,34 @@
 import { useState, useEffect, useCallback } from "react";
 
+// v2.0 - Fixed null handling for questions array
 function useTestLogic() {
-  const [questions, setQuestions] = useState([]);
+  const [questions, setQuestionsRaw] = useState([]);
+
+  // Wrapper to ensure questions is always an array
+  const setQuestions = (value) => {
+    setQuestionsRaw(Array.isArray(value) ? value : []);
+  };
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState([]);
   const [showResult, setShowResult] = useState(false);
   const [startTime, setStartTime] = useState(Date.now());
   const [responseTimes, setResponseTimes] = useState([]);
 
-  // Fetch questions from backend
+  // Fetch questions from backend with optional user token for personalization
   useEffect(() => {
-    fetch(`${process.env.REACT_APP_API_URL}/placement-questions`)
+    const token = localStorage.getItem("jwt");
+    const headers = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    fetch(`${process.env.REACT_APP_API_URL}/placement-questions`, { headers })
       .then((res) => res.json())
-      .then((data) => setQuestions(data))
-      .catch((err) => console.error("Error fetching questions:", err));
+      .then((data) => setQuestions(Array.isArray(data) ? data : []))
+      .catch((err) => {
+        console.error("Error fetching questions:", err);
+        setQuestions([]);
+      });
   }, []);
 
   useEffect(() => {
@@ -30,17 +45,18 @@ function useTestLogic() {
       const timeTaken = (Date.now() - startTime) / 1000;
       setResponseTimes((prev) => [...prev, timeTaken]);
       setAnswers((prev) => [...prev, option]);
-      if (step < questions.length - 1) {
+      if (questions && step < questions.length - 1) {
         setStep(step + 1);
       } else {
         setShowResult(true);
       }
     },
-    [step, startTime, questions.length]
+    [step, startTime, questions]
   );
 
   const getScore = useCallback(() => {
     let score = 0;
+    if (!questions || !Array.isArray(questions)) return 0;
     questions.forEach((q, i) => {
       if (q.answer && ["A", "B", "C", "D"].includes(q.answer)) {
         const correctOption = q.options["A"]
@@ -64,10 +80,20 @@ function useTestLogic() {
     setAnswers([]);
     setShowResult(false);
     setResponseTimes([]);
-    fetch(`${process.env.REACT_APP_API_URL}/placement-questions`)
+
+    const token = localStorage.getItem("jwt");
+    const headers = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    fetch(`${process.env.REACT_APP_API_URL}/placement-questions`, { headers })
       .then((res) => res.json())
-      .then((data) => setQuestions(data))
-      .catch((err) => console.error("Error refetching questions:", err));
+      .then((data) => setQuestions(Array.isArray(data) ? data : []))
+      .catch((err) => {
+        console.error("Error refetching questions:", err);
+        setQuestions([]);
+      });
   }, []);
 
   const getCorrectOptionValue = useCallback((q) => {
@@ -93,6 +119,7 @@ function useTestLogic() {
     getAvgTime,
     restartTest,
     getCorrectOptionValue,
+    responseTimes,
   };
 }
 

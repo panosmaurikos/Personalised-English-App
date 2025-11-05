@@ -8,12 +8,14 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
 	"github.com/lib/pq"
 	"github.com/panosmaurikos/personalisedenglish/backend/api"
 	"github.com/panosmaurikos/personalisedenglish/backend/feedback"
 	"github.com/panosmaurikos/personalisedenglish/backend/fuzzylogic"
 	"github.com/panosmaurikos/personalisedenglish/backend/models"
+	"github.com/panosmaurikos/personalisedenglish/backend/personalization"
 	"github.com/panosmaurikos/personalisedenglish/backend/services"
 	"github.com/rs/cors"
 )
@@ -41,6 +43,24 @@ func (h *Handler) SetupRouter(
 
 	r.HandleFunc("/placement-questions", func(w http.ResponseWriter, r *http.Request) {
 		limit := 20
+
+		// Try to get userID from token (optional - works for both logged in and anonymous users)
+		var userID int
+		authHeader := r.Header.Get("Authorization")
+		if authHeader != "" && len(authHeader) > 7 {
+			tokenString := authHeader[7:] // Remove "Bearer " prefix
+			token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+				return []byte("your-secret-key"), nil
+			})
+			if err == nil && token.Valid {
+				if claims, ok := token.Claims.(jwt.MapClaims); ok {
+					if id, ok := claims["user_id"].(float64); ok {
+						userID = int(id)
+					}
+				}
+			}
+		}
+
 		rows, err := db.Query(`SELECT id, question_text, question_type, options, correct_answer, points, category FROM placement_questions ORDER BY RANDOM() LIMIT $1`, limit)
 		if err != nil {
 			http.Error(w, `{"error": "Failed to fetch questions"}`, http.StatusInternalServerError)
@@ -48,6 +68,14 @@ func (h *Handler) SetupRouter(
 		}
 		defer rows.Close()
 		var questions []map[string]interface{}
+
+		// Get user's learning preferences if logged in
+		var preferences map[string]string
+		if userID > 0 {
+			learningAnalyzer := personalization.NewLearningStyleAnalyzer(db)
+			preferences, _ = learningAnalyzer.GetRecommendedQuestionTypes(userID)
+		}
+
 		for rows.Next() {
 			var q struct {
 				ID            int
@@ -62,14 +90,45 @@ func (h *Handler) SetupRouter(
 				http.Error(w, `{"error": "Failed to scan question"}`, http.StatusInternalServerError)
 				return
 			}
+
+			// Check if there's a better alternative for this question based on user preferences
+			finalQuestion := q.QuestionText
+			finalType := q.QuestionType
+			finalOptions := q.Options
+			finalAnswer := q.CorrectAnswer
+
+			if userID > 0 && preferences != nil {
+				preferredType, hasPreference := preferences[q.Category]
+				if hasPreference && preferredType != q.QuestionType {
+					// Look for alternative question with preferred type
+					var altText string
+					var altOptions []byte
+					var altAnswer string
+					err := db.QueryRow(`
+						SELECT question_text, options, correct_answer
+						FROM question_alternatives
+						WHERE base_question_id = $1 AND question_type = $2
+						LIMIT 1
+					`, q.ID, preferredType).Scan(&altText, &altOptions, &altAnswer)
+
+					if err == nil {
+						// Use alternative question
+						finalQuestion = altText
+						finalType = preferredType
+						finalOptions = altOptions
+						finalAnswer = altAnswer
+					}
+				}
+			}
+
 			var opts []string
-			_ = json.Unmarshal(q.Options, &opts)
+			_ = json.Unmarshal(finalOptions, &opts)
 			questions = append(questions, map[string]interface{}{
 				"id":       q.ID,
-				"question": q.QuestionText,
-				"type":     q.QuestionType,
+				"question": finalQuestion,
+				"type":     finalType,
 				"options":  opts,
-				"answer":   q.CorrectAnswer,
+				"answer":   finalAnswer,
 				"points":   q.Points,
 				"category": q.Category,
 			})
@@ -101,15 +160,113 @@ func (h *Handler) SetupRouter(
 		})
 	}).Methods("GET")
 
+	// Personalized practice questions endpoint - ALWAYS uses learning preferences
+	protectedRouter.HandleFunc("/personalized-practice-questions", func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := r.Context().Value("userID").(int)
+		if !ok || userID == 0 {
+			http.Error(w, `{"error": "User ID not found in context"}`, http.StatusUnauthorized)
+			return
+		}
+
+		limit := 20
+		rows, err := db.Query(`SELECT id, question_text, question_type, options, correct_answer, points, category FROM placement_questions ORDER BY RANDOM() LIMIT $1`, limit)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to fetch questions"}`, http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		var questions []map[string]interface{}
+
+		// ALWAYS get user's learning preferences for personalized practice
+		learningAnalyzer := personalization.NewLearningStyleAnalyzer(db)
+		preferences, _ := learningAnalyzer.GetRecommendedQuestionTypes(userID)
+
+		// Check if user has enough data (3+ attempts) to show personalized message
+		hasEnoughData := false
+		var totalAttempts int
+		db.QueryRow(`SELECT COALESCE(SUM(total_attempts), 0) FROM learning_preferences WHERE user_id = $1`, userID).Scan(&totalAttempts)
+		if totalAttempts >= 3 {
+			hasEnoughData = true
+		}
+
+		for rows.Next() {
+			var q struct {
+				ID            int
+				QuestionText  string
+				QuestionType  string
+				Options       []byte
+				CorrectAnswer string
+				Points        int
+				Category      string
+			}
+			if err := rows.Scan(&q.ID, &q.QuestionText, &q.QuestionType, &q.Options, &q.CorrectAnswer, &q.Points, &q.Category); err != nil {
+				http.Error(w, `{"error": "Failed to scan question"}`, http.StatusInternalServerError)
+				return
+			}
+
+			// Try to find personalized alternative
+			finalQuestion := q.QuestionText
+			finalType := q.QuestionType
+			finalOptions := q.Options
+			finalAnswer := q.CorrectAnswer
+			usedAlternative := false
+
+			if preferences != nil {
+				preferredType, hasPreference := preferences[q.Category]
+				if hasPreference && preferredType != q.QuestionType {
+					var altText string
+					var altOptions []byte
+					var altAnswer string
+					err := db.QueryRow(`
+						SELECT question_text, options, correct_answer
+						FROM question_alternatives
+						WHERE base_question_id = $1 AND question_type = $2
+						LIMIT 1
+					`, q.ID, preferredType).Scan(&altText, &altOptions, &altAnswer)
+
+					if err == nil {
+						finalQuestion = altText
+						finalType = preferredType
+						finalOptions = altOptions
+						finalAnswer = altAnswer
+						usedAlternative = true
+					}
+				}
+			}
+
+			var opts []string
+			json.Unmarshal(finalOptions, &opts)
+			questions = append(questions, map[string]interface{}{
+				"id":               q.ID,
+				"question":         finalQuestion,
+				"type":             finalType,
+				"options":          opts,
+				"answer":           finalAnswer,
+				"points":           q.Points,
+				"category":         q.Category,
+				"usedAlternative":  usedAlternative,
+			})
+		}
+
+		response := map[string]interface{}{
+			"questions":      questions,
+			"hasEnoughData":  hasEnoughData,
+			"totalAttempts":  totalAttempts,
+		}
+		json.NewEncoder(w).Encode(response)
+	}).Methods("GET")
+
 	protectedRouter.HandleFunc("/complete-test", func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
 			Score    float64 `json:"score"`
 			AvgTime  float64 `json:"avg_time"`
 			TestType string  `json:"test_type"`
 			Answers  []struct {
-				QuestionID     int    `json:"question_id"`
-				SelectedOption string `json:"selected_option"`
-				CorrectOption  string `json:"correct_option"`
+				QuestionID     int     `json:"question_id"`
+				SelectedOption string  `json:"selected_option"`
+				CorrectOption  string  `json:"correct_option"`
+				ResponseTime   float64 `json:"response_time"`
 			} `json:"answers"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -136,9 +293,9 @@ func (h *Handler) SetupRouter(
 			questionIDs = append(questionIDs, ans.QuestionID)
 		}
 
-		// Fetch categories for questions
+		// Fetch categories and question types for questions
 		catQuery := `
-        SELECT id, category
+        SELECT id, category, question_type
         FROM placement_questions
         WHERE id = ANY($1)
     `
@@ -150,14 +307,17 @@ func (h *Handler) SetupRouter(
 		defer rows.Close()
 
 		catMap := make(map[int]string)
+		qTypeMap := make(map[int]string)
 		for rows.Next() {
 			var id int
 			var category string
-			if err := rows.Scan(&id, &category); err != nil {
+			var questionType string
+			if err := rows.Scan(&id, &category, &questionType); err != nil {
 				http.Error(w, `{"error": "Failed to scan categories: `+err.Error()+`"}`, http.StatusInternalServerError)
 				return
 			}
 			catMap[id] = category
+			qTypeMap[id] = questionType
 		}
 
 		// Calculate totals and corrects per category
@@ -208,20 +368,196 @@ func (h *Handler) SetupRouter(
 			return
 		}
 
-		// Save answers (unchanged)
+		// Save answers with question type and response time
+		learningAnalyzer := personalization.NewLearningStyleAnalyzer(db)
 		for _, ans := range req.Answers {
+			questionType := qTypeMap[ans.QuestionID]
+			category := catMap[ans.QuestionID]
+			isCorrect := ans.SelectedOption == ans.CorrectOption
+
 			_, err := db.Exec(`
-            INSERT INTO test_answers (user_id, test_result_id, question_id, selected_option, correct_option, is_correct)
-            VALUES ($1, $2, $3, $4, $5, $6)
-        `, userID, testResultID, ans.QuestionID, ans.SelectedOption, ans.CorrectOption, ans.SelectedOption == ans.CorrectOption)
+            INSERT INTO test_answers (user_id, test_result_id, question_id, selected_option, correct_option, is_correct, question_type, response_time)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `, userID, testResultID, ans.QuestionID, ans.SelectedOption, ans.CorrectOption, isCorrect, questionType, ans.ResponseTime)
 			if err != nil {
 				http.Error(w, `{"error": "Failed to save answer: `+err.Error()+`"}`, http.StatusInternalServerError)
 				return
+			}
+
+			// Update learning preferences for personalization
+			if category != "" && questionType != "" && ans.ResponseTime > 0 {
+				err = learningAnalyzer.UpdatePreference(userID, questionType, category, isCorrect, ans.ResponseTime)
+				if err != nil {
+					// Log error but don't fail the request
+					log.Printf("Warning: Failed to update learning preference: %v", err)
+				}
 			}
 		}
 
 		json.NewEncoder(w).Encode(map[string]string{"level": level})
 	}).Methods("POST")
+
+	// Personalized questions endpoint - selects questions based on user's learning preferences
+	protectedRouter.HandleFunc("/personalized-questions", func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := r.Context().Value("userID").(int)
+		if !ok || userID == 0 {
+			http.Error(w, `{"error": "User ID not found in context"}`, http.StatusUnauthorized)
+			return
+		}
+
+		// Get query parameters
+		limitStr := r.URL.Query().Get("limit")
+		limit := 20
+		if limitStr != "" {
+			if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+				limit = l
+			}
+		}
+
+		// Get learning preferences
+		learningAnalyzer := personalization.NewLearningStyleAnalyzer(db)
+		recommendations, err := learningAnalyzer.GetRecommendedQuestionTypes(userID)
+		if err != nil {
+			log.Printf("Warning: Failed to get recommendations: %v", err)
+			// Fallback to random questions
+			rows, err := db.Query(`
+				SELECT id, question_text, question_type, options, correct_answer, points, category
+				FROM placement_questions
+				ORDER BY RANDOM()
+				LIMIT $1
+			`, limit)
+			if err != nil {
+				http.Error(w, `{"error": "Failed to fetch questions"}`, http.StatusInternalServerError)
+				return
+			}
+			defer rows.Close()
+
+			var questions []map[string]interface{}
+			for rows.Next() {
+				var q struct {
+					ID            int
+					QuestionText  string
+					QuestionType  string
+					Options       []byte
+					CorrectAnswer string
+					Points        int
+					Category      string
+				}
+				if err := rows.Scan(&q.ID, &q.QuestionText, &q.QuestionType, &q.Options, &q.CorrectAnswer, &q.Points, &q.Category); err != nil {
+					continue
+				}
+				var opts []string
+				_ = json.Unmarshal(q.Options, &opts)
+				questions = append(questions, map[string]interface{}{
+					"id":       q.ID,
+					"question": q.QuestionText,
+					"type":     q.QuestionType,
+					"options":  opts,
+					"answer":   q.CorrectAnswer,
+					"points":   q.Points,
+					"category": q.Category,
+				})
+			}
+			json.NewEncoder(w).Encode(questions)
+			return
+		}
+
+		// Build query to select questions matching preferred types per category
+		var questions []map[string]interface{}
+		categories := []string{"grammar", "vocabulary", "reading", "listening", "speaking"}
+		questionsPerCategory := limit / len(categories)
+		if questionsPerCategory < 1 {
+			questionsPerCategory = 1
+		}
+
+		for _, category := range categories {
+			preferredType := recommendations[category]
+			if preferredType == "" {
+				preferredType = "multiple_choice"
+			}
+
+			rows, err := db.Query(`
+				SELECT id, question_text, question_type, options, correct_answer, points, category
+				FROM placement_questions
+				WHERE category = $1 AND question_type = $2
+				ORDER BY RANDOM()
+				LIMIT $3
+			`, category, preferredType, questionsPerCategory)
+
+			if err != nil {
+				log.Printf("Warning: Failed to fetch questions for category %s: %v", category, err)
+				continue
+			}
+
+			for rows.Next() {
+				var q struct {
+					ID            int
+					QuestionText  string
+					QuestionType  string
+					Options       []byte
+					CorrectAnswer string
+					Points        int
+					Category      string
+				}
+				if err := rows.Scan(&q.ID, &q.QuestionText, &q.QuestionType, &q.Options, &q.CorrectAnswer, &q.Points, &q.Category); err != nil {
+					continue
+				}
+				var opts []string
+				_ = json.Unmarshal(q.Options, &opts)
+				questions = append(questions, map[string]interface{}{
+					"id":       q.ID,
+					"question": q.QuestionText,
+					"type":     q.QuestionType,
+					"options":  opts,
+					"answer":   q.CorrectAnswer,
+					"points":   q.Points,
+					"category": q.Category,
+				})
+			}
+			rows.Close()
+		}
+
+		// If we don't have enough questions, fill with random ones
+		if len(questions) < limit {
+			remaining := limit - len(questions)
+			rows, err := db.Query(`
+				SELECT id, question_text, question_type, options, correct_answer, points, category
+				FROM placement_questions
+				ORDER BY RANDOM()
+				LIMIT $1
+			`, remaining)
+			if err == nil {
+				defer rows.Close()
+				for rows.Next() {
+					var q struct {
+						ID            int
+						QuestionText  string
+						QuestionType  string
+						Options       []byte
+						CorrectAnswer string
+						Points        int
+						Category      string
+					}
+					if err := rows.Scan(&q.ID, &q.QuestionText, &q.QuestionType, &q.Options, &q.CorrectAnswer, &q.Points, &q.Category); err != nil {
+						continue
+					}
+					var opts []string
+					_ = json.Unmarshal(q.Options, &opts)
+					questions = append(questions, map[string]interface{}{
+						"id":       q.ID,
+						"question": q.QuestionText,
+						"type":     q.QuestionType,
+						"options":  opts,
+						"answer":   q.CorrectAnswer,
+						"points":   q.Points,
+						"category": q.Category,
+					})
+				}
+			}
+		}
+
+		json.NewEncoder(w).Encode(questions)
+	}).Methods("GET")
 
 	protectedRouter.HandleFunc("/user-mistakes", func(w http.ResponseWriter, r *http.Request) {
 		userID, ok := r.Context().Value("userID").(int)
@@ -295,6 +631,114 @@ func (h *Handler) SetupRouter(
 			})
 		}
 		json.NewEncoder(w).Encode(mistakes)
+	}).Methods("GET")
+
+	// Learning preferences endpoint - view user's learning preferences by question type
+	protectedRouter.HandleFunc("/learning-preferences", func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := r.Context().Value("userID").(int)
+		if !ok || userID == 0 {
+			http.Error(w, `{"error": "User ID not found in context"}`, http.StatusUnauthorized)
+			return
+		}
+
+		learningAnalyzer := personalization.NewLearningStyleAnalyzer(db)
+		prefs, err := learningAnalyzer.GetPreferencesByUser(userID)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to fetch learning preferences: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+
+		json.NewEncoder(w).Encode(prefs)
+	}).Methods("GET")
+
+	// Last 5 tests endpoint - returns user's last 5 test results with learning preferences
+	protectedRouter.HandleFunc("/last-five-tests", func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := r.Context().Value("userID").(int)
+		if !ok || userID == 0 {
+			http.Error(w, `{"error": "User ID not found in context"}`, http.StatusUnauthorized)
+			return
+		}
+
+		// Get last 5 test results
+		rows, err := db.Query(`
+			SELECT id, score, avg_response_time, vocabulary_pct, grammar_pct, reading_pct, listening_pct,
+			       fuzzy_level, taken_at
+			FROM test_results_level
+			WHERE user_id = $1
+			ORDER BY taken_at DESC
+			LIMIT 5
+		`, userID)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to fetch test results: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		var tests []map[string]interface{}
+		for rows.Next() {
+			var id int
+			var score, avgTime, vocabPct, grammarPct, readingPct, listeningPct float64
+			var fuzzyLevel string
+			var takenAt string
+			if err := rows.Scan(&id, &score, &avgTime, &vocabPct, &grammarPct, &readingPct, &listeningPct, &fuzzyLevel, &takenAt); err != nil {
+				continue
+			}
+
+			// Get learning preferences for this test period
+			learningAnalyzer := personalization.NewLearningStyleAnalyzer(db)
+			recommendations, _ := learningAnalyzer.GetRecommendedQuestionTypes(userID)
+
+			tests = append(tests, map[string]interface{}{
+				"id":                    id,
+				"score":                 score,
+				"avg_response_time":     avgTime,
+				"vocabulary_percentage": vocabPct,
+				"grammar_percentage":    grammarPct,
+				"reading_percentage":    readingPct,
+				"listening_percentage":  listeningPct,
+				"level":                 fuzzyLevel,
+				"taken_at":              takenAt,
+				"recommended_types":     recommendations,
+			})
+		}
+
+		json.NewEncoder(w).Encode(tests)
+	}).Methods("GET")
+
+	// Learning style analysis endpoint - provides comprehensive learning style analysis
+	protectedRouter.HandleFunc("/learning-style-analysis", func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := r.Context().Value("userID").(int)
+		if !ok || userID == 0 {
+			http.Error(w, `{"error": "User ID not found in context"}`, http.StatusUnauthorized)
+			return
+		}
+
+		learningAnalyzer := personalization.NewLearningStyleAnalyzer(db)
+		analysis, err := learningAnalyzer.AnalyzeOverallLearningStyle(userID)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to analyze learning style: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+
+		json.NewEncoder(w).Encode(analysis)
+	}).Methods("GET")
+
+	// Recommended question types endpoint - returns best question type per category
+	protectedRouter.HandleFunc("/recommended-question-types", func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := r.Context().Value("userID").(int)
+		if !ok || userID == 0 {
+			http.Error(w, `{"error": "User ID not found in context"}`, http.StatusUnauthorized)
+			return
+		}
+
+		learningAnalyzer := personalization.NewLearningStyleAnalyzer(db)
+		recommendations, err := learningAnalyzer.GetRecommendedQuestionTypes(userID)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to get recommendations: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+
+		json.NewEncoder(w).Encode(recommendations)
 	}).Methods("GET")
 
 	protectedRouter.HandleFunc("/recommended-questions", func(w http.ResponseWriter, r *http.Request) {
