@@ -16,17 +16,13 @@ import (
 )
 
 func main() {
-	// 1. Load .env
 	config.Init()
 
-	// 2. Συνέδεση DB
 	db, err := config.GetDB()
 	if err != nil {
 		log.Fatalf("DB connection error: %v", err)
 	}
 	defer db.Close()
-
-	// 3. Dependency injection
 	userRepo := repositories.NewUserRepository(db)
 	userSvc := services.NewUserService(userRepo)
 	registerHandler := api.NewRegisterHandler(userSvc)

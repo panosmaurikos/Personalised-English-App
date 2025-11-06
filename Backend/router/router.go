@@ -609,7 +609,7 @@ func (h *Handler) SetupRouter(
 		json.NewEncoder(w).Encode(mistakes)
 	}).Methods("GET")
 
-	// Νέο endpoint για λάθη ανά phenomenon
+	// Endpoint for user mistakes by phenomenon
 	protectedRouter.HandleFunc("/user-phenomenon-mistakes", func(w http.ResponseWriter, r *http.Request) {
 		userID, ok := r.Context().Value("userID").(int)
 		if !ok || userID == 0 {
@@ -761,7 +761,7 @@ func (h *Handler) SetupRouter(
 			return
 		}
 
-		// Βρες το τελευταίο test του χρήστη
+		// Find user's most recent test
 		var testID int
 		var fuzzyLevel string
 		err := db.QueryRow(`
@@ -773,11 +773,11 @@ func (h *Handler) SetupRouter(
 	`, userID).Scan(&testID, &fuzzyLevel)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode([]map[string]interface{}{}) // empty array
+			json.NewEncoder(w).Encode([]map[string]interface{}{})
 			return
 		}
 
-		// 1. Φέρε top phenomena με τα περισσότερα λάθη
+		// Fetch top phenomena with most mistakes
 		var phenomena []string
 		rows, err := db.Query(`
 			SELECT pq.phenomenon
@@ -798,7 +798,7 @@ func (h *Handler) SetupRouter(
 		}
 
 		var questions []map[string]interface{}
-		// 2. Φέρε ερωτήσεις με βάση τα phenomena
+		// Fetch questions based on phenomena
 		if len(phenomena) > 0 {
 			rows, err := db.Query(`
 				SELECT id, question_text, question_type, options, correct_answer, points, category, difficulty, phenomenon
@@ -840,7 +840,7 @@ func (h *Handler) SetupRouter(
 			}
 		}
 
-		// Συνέχισε με misconceptions/top categories όπως πριν
+		// Continue with misconceptions and top categories
 		misconceptions, err := feedback.DetectMisconceptions(db, testID)
 		categories := []string{}
 		if err == nil && len(misconceptions) > 0 {
@@ -868,7 +868,7 @@ func (h *Handler) SetupRouter(
 			}
 		}
 
-		// Επιλογή difficulty bounds με βάση fuzzy_level
+		// Select difficulty bounds based on fuzzy_level
 		difficultyMin, difficultyMax := 1, 5
 		switch fuzzyLevel {
 		case "Beginner":
@@ -879,7 +879,7 @@ func (h *Handler) SetupRouter(
 			difficultyMin, difficultyMax = 3, 5
 		}
 
-		// Φέρε επιπλέον ερωτήσεις από categories
+		// Fetch additional questions from categories
 		if len(categories) > 0 {
 			rows, err := db.Query(`
 				SELECT id, question_text, question_type, options, correct_answer, points, category, difficulty, phenomenon
@@ -974,7 +974,7 @@ func (h *Handler) SetupRouter(
 		json.NewEncoder(w).Encode(history)
 	}).Methods("GET")
 
-	// Misconceptions endpoint (όπως πριν)
+	// Misconceptions endpoint
 	protectedRouter.HandleFunc("/misconceptions/{testID}", func(w http.ResponseWriter, r *http.Request) {
 		userID, ok := r.Context().Value("userID").(int)
 		if !ok {
@@ -1015,7 +1015,7 @@ func (h *Handler) SetupRouter(
 		json.NewEncoder(w).Encode(misconceptions)
 	}).Methods("GET")
 
-	// -- Teacher routes (όπως πριν) --
+	// Teacher routes
 	teacherRouter := r.PathPrefix("/teacher").Subrouter()
 	teacherRouter.Use(api.TeacherOnlyMiddleware)
 

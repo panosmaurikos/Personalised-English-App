@@ -89,11 +89,11 @@ function Recommended() {
           }}>
             <div style={{ fontSize: "60px", marginBottom: "20px" }}>🎯</div>
             <h2 style={{ color: "#2563eb", marginBottom: "15px" }}>
-              Προσοποιημένη Εξάσκηση!
+              Personalized Practice!
             </h2>
             <p style={{ fontSize: "18px", color: "#555", lineHeight: "1.6" }}>
-              Τώρα το test θα είναι πιο κοντά σε αυτό που μαθαίνεις εσύ! Οι ερωτήσεις
-              είναι προσαρμοσμένες στον τρόπο που μαθαίνεις καλύτερα.
+              Now the test will be closer to what you are learning! The questions
+              are adapted to the way you learn best.
             </p>
             <button
               onClick={() => setShowPersonalizedPopup(false)}
@@ -109,7 +109,7 @@ function Recommended() {
                 fontWeight: "600",
               }}
             >
-              Ας Ξεκινήσουμε! 🚀
+              Let's Get Started! 🚀
             </button>
           </div>
         </div>

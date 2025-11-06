@@ -72,8 +72,6 @@ function App() {
     location.pathname === "/login" ||
     location.pathname.startsWith("/classroom-test");
 
-  // ...existing code...
-
   const {
     showContactPopup,
     contact,

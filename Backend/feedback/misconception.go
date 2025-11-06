@@ -5,16 +5,13 @@ import (
 	"database/sql"
 )
 
-// Misconception represents a detected weakness in a specific category
 type Misconception struct {
 	Category       string  `json:"category"`
 	Percentage     float64 `json:"percentage"`
-	WrongQuestions []int   `json:"wrong_questions"` // Προσθήκη του πεδίου για τα λάθη
+	WrongQuestions []int   `json:"wrong_questions"`
 }
 
-// DetectMisconceptions identifies weaknesses based on test results and fetches wrong question IDs
 func DetectMisconceptions(db *sql.DB, testResultID int) ([]Misconception, error) {
-	// Get mistake counts by category for this specific test
 	rows, err := db.Query(`
 		SELECT pq.category, COUNT(*) as mistake_count
 		FROM test_answers ta
@@ -31,7 +28,7 @@ func DetectMisconceptions(db *sql.DB, testResultID int) ([]Misconception, error)
 	// Calculate total mistakes for this test
 	var totalMistakes int
 	mistakeCounts := make(map[string]int)
-	
+
 	for rows.Next() {
 		var category string
 		var count int

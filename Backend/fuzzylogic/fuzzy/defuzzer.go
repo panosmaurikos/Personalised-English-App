@@ -11,7 +11,7 @@ import (
 type Defuzzification func(fs Set, u crisp.Set) float64
 
 var (
-	// DefuzzificationCentroid is Sum(µ(xi)*xi) / Sum(µ(xi))
+	// DefuzzificationCentroid is Sum(mu(xi)*xi) / Sum(mu(xi))
 	DefuzzificationCentroid Defuzzification = defuzzificationCentroid
 
 	// DefuzzificationSmallestOfMaxs returns the smallest of maximums
