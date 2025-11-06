@@ -6,6 +6,7 @@ import (
 	"log"
 	"math"
 	"net/http"
+	"sort"
 	"strconv"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -19,6 +20,14 @@ import (
 	"github.com/panosmaurikos/personalisedenglish/backend/services"
 	"github.com/rs/cors"
 )
+
+// Helper function to get absolute value of an integer
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
 
 type Handler struct{}
 
@@ -169,18 +178,243 @@ func (h *Handler) SetupRouter(
 		}
 
 		limit := 20
-		rows, err := db.Query(`SELECT id, question_text, question_type, options, correct_answer, points, category FROM placement_questions ORDER BY RANDOM() LIMIT $1`, limit)
+
+		// Get user's learning preferences
+		learningAnalyzer := personalization.NewLearningStyleAnalyzer(db)
+		preferences, err := learningAnalyzer.GetRecommendedQuestionTypes(userID)
 		if err != nil {
-			http.Error(w, `{"error": "Failed to fetch questions"}`, http.StatusInternalServerError)
-			return
+			log.Printf("Warning: Failed to get recommendations: %v", err)
 		}
-		defer rows.Close()
+
+		// Get user's mistake counts by category to weight question distribution
+		mistakeRows, err := db.Query(`
+			SELECT pq.category, COUNT(*) as mistake_count
+			FROM test_answers ta
+			JOIN placement_questions pq ON ta.question_id = pq.id
+			WHERE ta.user_id = $1 AND ta.is_correct = FALSE
+			GROUP BY pq.category
+			ORDER BY mistake_count DESC
+		`, userID)
+		if err != nil {
+			log.Printf("Warning: Failed to get mistake counts: %v", err)
+		}
+
+		// Build mistake count map and calculate total mistakes
+		mistakeCounts := make(map[string]int)
+		totalMistakes := 0
+		if mistakeRows != nil {
+			defer mistakeRows.Close()
+			for mistakeRows.Next() {
+				var category string
+				var count int
+				if err := mistakeRows.Scan(&category, &count); err == nil {
+					mistakeCounts[category] = count
+					totalMistakes += count
+				}
+			}
+		}
 
 		var questions []map[string]interface{}
+		categories := []string{"grammar", "vocabulary", "reading", "listening", "speaking"}
+		
+		// If no mistakes yet, fall back to equal distribution
+		if totalMistakes == 0 {
+			questionsPerCategory := limit / len(categories)
+			if questionsPerCategory < 1 {
+				questionsPerCategory = 1
+			}
+			for _, category := range categories {
+				mistakeCounts[category] = questionsPerCategory
+			}
+			totalMistakes = limit
+		}
 
-		// ALWAYS get user's learning preferences for personalized practice
-		learningAnalyzer := personalization.NewLearningStyleAnalyzer(db)
-		preferences, _ := learningAnalyzer.GetRecommendedQuestionTypes(userID)
+		// Sort categories by mistake count (highest to lowest)
+		sortedCategories := make([]string, len(categories))
+		copy(sortedCategories, categories)
+		sort.Slice(sortedCategories, func(i, j int) bool {
+			return mistakeCounts[sortedCategories[i]] > mistakeCounts[sortedCategories[j]]
+		})
+
+		// Enhanced distribution with amplified differences
+		idealDistribution := make(map[string]int)
+		totalAllocated := 0
+		
+		if totalMistakes > 0 {
+			// Calculate base distribution with amplified differences
+			for i, category := range sortedCategories {
+				mistakeCount := mistakeCounts[category]
+				basePercentage := float64(mistakeCount) / float64(totalMistakes)
+				
+				// Amplify differences: give more weight to top problem areas, less to bottom
+				var amplifiedPercentage float64
+				switch i {
+				case 0, 1: // Top 2 problem areas get boosted
+					amplifiedPercentage = basePercentage * 1.3
+				case 2: // Middle area stays similar
+					amplifiedPercentage = basePercentage * 1.0
+				case 3, 4: // Bottom 2 areas get reduced
+					amplifiedPercentage = basePercentage * 0.6
+				}
+				
+				questions := int(math.Round(amplifiedPercentage * float64(limit)))
+				
+				// Apply minimum/maximum bounds more aggressively
+				if i <= 1 { // Top 2: minimum 5, maximum 8
+					if questions < 5 {
+						questions = 5
+					}
+					if questions > 8 {
+						questions = 8
+					}
+				} else if i == 2 { // Middle: 3-5 questions
+					if questions < 3 {
+						questions = 3
+					}
+					if questions > 5 {
+						questions = 5
+					}
+				} else { // Bottom 2: maximum 3 questions
+					if questions > 3 {
+						questions = 3
+					}
+					if questions < 1 {
+						questions = 1
+					}
+				}
+				
+				idealDistribution[category] = questions
+				totalAllocated += questions
+			}
+		} else {
+			// Equal distribution if no mistake data
+			questionsPerCategory := limit / len(categories)
+			for _, category := range categories {
+				idealDistribution[category] = questionsPerCategory
+				totalAllocated += questionsPerCategory
+			}
+		}
+
+		// Adjust for any rounding differences
+		difference := limit - totalAllocated
+		if difference != 0 {
+			// Sort categories by mistake count to allocate remaining questions to biggest problem areas
+			sortedCategories := make([]string, len(categories))
+			copy(sortedCategories, categories)
+			sort.Slice(sortedCategories, func(i, j int) bool {
+				return mistakeCounts[sortedCategories[i]] > mistakeCounts[sortedCategories[j]]
+			})
+			
+			// Distribute remaining questions to categories with most mistakes
+			for i := 0; i < abs(difference); i++ {
+				category := sortedCategories[i%len(sortedCategories)]
+				if difference > 0 {
+					idealDistribution[category]++
+				} else if idealDistribution[category] > 0 {
+					idealDistribution[category]--
+				}
+			}
+		}
+
+		for _, category := range categories {
+			preferredType := preferences[category]
+			if preferredType == "" {
+				preferredType = "multiple_choice"
+			}
+
+			questionsForCategory := idealDistribution[category]
+			mistakeCount := mistakeCounts[category]
+			
+			// Skip categories with 0 questions
+			if questionsForCategory == 0 {
+				continue
+			}
+
+			log.Printf("Personalized practice questions - Category: %s, Mistakes: %d, Questions: %d (%.1f%%)", 
+				category, mistakeCount, questionsForCategory, 
+				float64(mistakeCount)/float64(totalMistakes)*100)
+
+			rows, err := db.Query(`
+				SELECT id, question_text, question_type, options, correct_answer, points, category
+				FROM placement_questions
+				WHERE category = $1 AND question_type = $2
+				ORDER BY RANDOM()
+				LIMIT $3
+			`, category, preferredType, questionsForCategory)
+
+			if err != nil {
+				log.Printf("Warning: Failed to fetch questions for category %s: %v", category, err)
+				continue
+			}
+
+			for rows.Next() {
+				var q struct {
+					ID            int
+					QuestionText  string
+					QuestionType  string
+					Options       []byte
+					CorrectAnswer string
+					Points        int
+					Category      string
+				}
+				if err := rows.Scan(&q.ID, &q.QuestionText, &q.QuestionType, &q.Options, &q.CorrectAnswer, &q.Points, &q.Category); err != nil {
+					continue
+				}
+				var opts []string
+				json.Unmarshal(q.Options, &opts)
+				questions = append(questions, map[string]interface{}{
+					"id":               q.ID,
+					"question":         q.QuestionText,
+					"type":             q.QuestionType,
+					"options":          opts,
+					"answer":           q.CorrectAnswer,
+					"points":           q.Points,
+					"category":         q.Category,
+					"usedAlternative":  false,
+				})
+			}
+			rows.Close()
+		}
+
+		// If we don't have enough questions, fill with random ones
+		if len(questions) < limit {
+			remaining := limit - len(questions)
+			rows, err := db.Query(`
+				SELECT id, question_text, question_type, options, correct_answer, points, category
+				FROM placement_questions
+				ORDER BY RANDOM()
+				LIMIT $1
+			`, remaining)
+			if err == nil {
+				defer rows.Close()
+				for rows.Next() {
+					var q struct {
+						ID            int
+						QuestionText  string
+						QuestionType  string
+						Options       []byte
+						CorrectAnswer string
+						Points        int
+						Category      string
+					}
+					if err := rows.Scan(&q.ID, &q.QuestionText, &q.QuestionType, &q.Options, &q.CorrectAnswer, &q.Points, &q.Category); err != nil {
+						continue
+					}
+					var opts []string
+					json.Unmarshal(q.Options, &opts)
+					questions = append(questions, map[string]interface{}{
+						"id":               q.ID,
+						"question":         q.QuestionText,
+						"type":             q.QuestionType,
+						"options":          opts,
+						"answer":           q.CorrectAnswer,
+						"points":           q.Points,
+						"category":         q.Category,
+						"usedAlternative":  false,
+					})
+				}
+			}
+		}
 
 		// Check if user has enough data (3+ attempts) to show personalized message
 		hasEnoughData := false
@@ -188,65 +422,6 @@ func (h *Handler) SetupRouter(
 		db.QueryRow(`SELECT COALESCE(SUM(total_attempts), 0) FROM learning_preferences WHERE user_id = $1`, userID).Scan(&totalAttempts)
 		if totalAttempts >= 3 {
 			hasEnoughData = true
-		}
-
-		for rows.Next() {
-			var q struct {
-				ID            int
-				QuestionText  string
-				QuestionType  string
-				Options       []byte
-				CorrectAnswer string
-				Points        int
-				Category      string
-			}
-			if err := rows.Scan(&q.ID, &q.QuestionText, &q.QuestionType, &q.Options, &q.CorrectAnswer, &q.Points, &q.Category); err != nil {
-				http.Error(w, `{"error": "Failed to scan question"}`, http.StatusInternalServerError)
-				return
-			}
-
-			// Try to find personalized alternative
-			finalQuestion := q.QuestionText
-			finalType := q.QuestionType
-			finalOptions := q.Options
-			finalAnswer := q.CorrectAnswer
-			usedAlternative := false
-
-			if preferences != nil {
-				preferredType, hasPreference := preferences[q.Category]
-				if hasPreference && preferredType != q.QuestionType {
-					var altText string
-					var altOptions []byte
-					var altAnswer string
-					err := db.QueryRow(`
-						SELECT question_text, options, correct_answer
-						FROM question_alternatives
-						WHERE base_question_id = $1 AND question_type = $2
-						LIMIT 1
-					`, q.ID, preferredType).Scan(&altText, &altOptions, &altAnswer)
-
-					if err == nil {
-						finalQuestion = altText
-						finalType = preferredType
-						finalOptions = altOptions
-						finalAnswer = altAnswer
-						usedAlternative = true
-					}
-				}
-			}
-
-			var opts []string
-			json.Unmarshal(finalOptions, &opts)
-			questions = append(questions, map[string]interface{}{
-				"id":               q.ID,
-				"question":         finalQuestion,
-				"type":             finalType,
-				"options":          opts,
-				"answer":           finalAnswer,
-				"points":           q.Points,
-				"category":         q.Category,
-				"usedAlternative":  usedAlternative,
-			})
 		}
 
 		response := map[string]interface{}{
@@ -396,168 +571,6 @@ func (h *Handler) SetupRouter(
 
 		json.NewEncoder(w).Encode(map[string]string{"level": level})
 	}).Methods("POST")
-
-	// Personalized questions endpoint - selects questions based on user's learning preferences
-	protectedRouter.HandleFunc("/personalized-questions", func(w http.ResponseWriter, r *http.Request) {
-		userID, ok := r.Context().Value("userID").(int)
-		if !ok || userID == 0 {
-			http.Error(w, `{"error": "User ID not found in context"}`, http.StatusUnauthorized)
-			return
-		}
-
-		// Get query parameters
-		limitStr := r.URL.Query().Get("limit")
-		limit := 20
-		if limitStr != "" {
-			if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
-				limit = l
-			}
-		}
-
-		// Get learning preferences
-		learningAnalyzer := personalization.NewLearningStyleAnalyzer(db)
-		recommendations, err := learningAnalyzer.GetRecommendedQuestionTypes(userID)
-		if err != nil {
-			log.Printf("Warning: Failed to get recommendations: %v", err)
-			// Fallback to random questions
-			rows, err := db.Query(`
-				SELECT id, question_text, question_type, options, correct_answer, points, category
-				FROM placement_questions
-				ORDER BY RANDOM()
-				LIMIT $1
-			`, limit)
-			if err != nil {
-				http.Error(w, `{"error": "Failed to fetch questions"}`, http.StatusInternalServerError)
-				return
-			}
-			defer rows.Close()
-
-			var questions []map[string]interface{}
-			for rows.Next() {
-				var q struct {
-					ID            int
-					QuestionText  string
-					QuestionType  string
-					Options       []byte
-					CorrectAnswer string
-					Points        int
-					Category      string
-				}
-				if err := rows.Scan(&q.ID, &q.QuestionText, &q.QuestionType, &q.Options, &q.CorrectAnswer, &q.Points, &q.Category); err != nil {
-					continue
-				}
-				var opts []string
-				_ = json.Unmarshal(q.Options, &opts)
-				questions = append(questions, map[string]interface{}{
-					"id":       q.ID,
-					"question": q.QuestionText,
-					"type":     q.QuestionType,
-					"options":  opts,
-					"answer":   q.CorrectAnswer,
-					"points":   q.Points,
-					"category": q.Category,
-				})
-			}
-			json.NewEncoder(w).Encode(questions)
-			return
-		}
-
-		// Build query to select questions matching preferred types per category
-		var questions []map[string]interface{}
-		categories := []string{"grammar", "vocabulary", "reading", "listening", "speaking"}
-		questionsPerCategory := limit / len(categories)
-		if questionsPerCategory < 1 {
-			questionsPerCategory = 1
-		}
-
-		for _, category := range categories {
-			preferredType := recommendations[category]
-			if preferredType == "" {
-				preferredType = "multiple_choice"
-			}
-
-			rows, err := db.Query(`
-				SELECT id, question_text, question_type, options, correct_answer, points, category
-				FROM placement_questions
-				WHERE category = $1 AND question_type = $2
-				ORDER BY RANDOM()
-				LIMIT $3
-			`, category, preferredType, questionsPerCategory)
-
-			if err != nil {
-				log.Printf("Warning: Failed to fetch questions for category %s: %v", category, err)
-				continue
-			}
-
-			for rows.Next() {
-				var q struct {
-					ID            int
-					QuestionText  string
-					QuestionType  string
-					Options       []byte
-					CorrectAnswer string
-					Points        int
-					Category      string
-				}
-				if err := rows.Scan(&q.ID, &q.QuestionText, &q.QuestionType, &q.Options, &q.CorrectAnswer, &q.Points, &q.Category); err != nil {
-					continue
-				}
-				var opts []string
-				_ = json.Unmarshal(q.Options, &opts)
-				questions = append(questions, map[string]interface{}{
-					"id":       q.ID,
-					"question": q.QuestionText,
-					"type":     q.QuestionType,
-					"options":  opts,
-					"answer":   q.CorrectAnswer,
-					"points":   q.Points,
-					"category": q.Category,
-				})
-			}
-			rows.Close()
-		}
-
-		// If we don't have enough questions, fill with random ones
-		if len(questions) < limit {
-			remaining := limit - len(questions)
-			rows, err := db.Query(`
-				SELECT id, question_text, question_type, options, correct_answer, points, category
-				FROM placement_questions
-				ORDER BY RANDOM()
-				LIMIT $1
-			`, remaining)
-			if err == nil {
-				defer rows.Close()
-				for rows.Next() {
-					var q struct {
-						ID            int
-						QuestionText  string
-						QuestionType  string
-						Options       []byte
-						CorrectAnswer string
-						Points        int
-						Category      string
-					}
-					if err := rows.Scan(&q.ID, &q.QuestionText, &q.QuestionType, &q.Options, &q.CorrectAnswer, &q.Points, &q.Category); err != nil {
-						continue
-					}
-					var opts []string
-					_ = json.Unmarshal(q.Options, &opts)
-					questions = append(questions, map[string]interface{}{
-						"id":       q.ID,
-						"question": q.QuestionText,
-						"type":     q.QuestionType,
-						"options":  opts,
-						"answer":   q.CorrectAnswer,
-						"points":   q.Points,
-						"category": q.Category,
-					})
-				}
-			}
-		}
-
-		json.NewEncoder(w).Encode(questions)
-	}).Methods("GET")
 
 	protectedRouter.HandleFunc("/user-mistakes", func(w http.ResponseWriter, r *http.Request) {
 		userID, ok := r.Context().Value("userID").(int)
