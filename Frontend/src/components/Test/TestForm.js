@@ -12,7 +12,7 @@ function TestForm({ form, setForm, onSubmit, onClose, title }) {
     } else {
       newQuestions[index][e.target.name] = e.target.value;
       // always enforce multiple choice type in data
-      newQuestions[index].question_type = "multiple";
+      newQuestions[index].question_type = "multiple_choice";
     }
     setForm({ ...form, questions: newQuestions });
   };
@@ -30,7 +30,7 @@ function TestForm({ form, setForm, onSubmit, onClose, title }) {
         ...form.questions,
         {
           question_text: "",
-          question_type: "multiple",
+          question_type: "multiple_choice",
           category: "vocabulary",
           options: { A: "", B: "", C: "", D: "" },
           correct_answer: "",

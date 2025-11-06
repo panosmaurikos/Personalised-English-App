@@ -111,7 +111,7 @@ function Tests() {
         <button
           className={styles["test-retry-btn"]}
           style={{ background: "#17a2b8" }}
-          onClick={() => window.location.reload()}
+          onClick={restartTest}
         >
           🔄 Restart Test
         </button>

@@ -14,26 +14,47 @@ type Misconception struct {
 
 // DetectMisconceptions identifies weaknesses based on test results and fetches wrong question IDs
 func DetectMisconceptions(db *sql.DB, testResultID int) ([]Misconception, error) {
-	var vocabPct, grammarPct, readingPct, listeningPct *float64
-	err := db.QueryRow(`
-        SELECT vocabulary_pct, grammar_pct, reading_pct, listening_pct
-        FROM test_results_level WHERE id = $1`, testResultID).Scan(&vocabPct, &grammarPct, &readingPct, &listeningPct)
+	// Get mistake counts by category for this specific test
+	rows, err := db.Query(`
+		SELECT pq.category, COUNT(*) as mistake_count
+		FROM test_answers ta
+		JOIN placement_questions pq ON ta.question_id = pq.id
+		WHERE ta.test_result_id = $1 AND ta.is_correct = FALSE
+		GROUP BY pq.category
+		ORDER BY mistake_count DESC
+	`, testResultID)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
+	// Calculate total mistakes for this test
+	var totalMistakes int
+	mistakeCounts := make(map[string]int)
+	
+	for rows.Next() {
+		var category string
+		var count int
+		if err := rows.Scan(&category, &count); err != nil {
+			return nil, err
+		}
+		mistakeCounts[category] = count
+		totalMistakes += count
+	}
+
+	// If no mistakes, return empty
+	if totalMistakes == 0 {
+		return []Misconception{}, nil
+	}
+
+	// Calculate percentages and create misconceptions
 	misconceptions := []Misconception{}
-	if vocabPct != nil && *vocabPct < 60 {
-		misconceptions = append(misconceptions, Misconception{Category: "vocabulary", Percentage: *vocabPct})
-	}
-	if grammarPct != nil && *grammarPct < 60 {
-		misconceptions = append(misconceptions, Misconception{Category: "grammar", Percentage: *grammarPct})
-	}
-	if readingPct != nil && *readingPct < 60 {
-		misconceptions = append(misconceptions, Misconception{Category: "reading", Percentage: *readingPct})
-	}
-	if listeningPct != nil && *listeningPct < 60 {
-		misconceptions = append(misconceptions, Misconception{Category: "listening", Percentage: *listeningPct})
+	for category, count := range mistakeCounts {
+		percentage := float64(count) / float64(totalMistakes) * 100
+		misconceptions = append(misconceptions, Misconception{
+			Category:   category,
+			Percentage: percentage,
+		})
 	}
 
 	// Fetch wrong question IDs for each detected misconception

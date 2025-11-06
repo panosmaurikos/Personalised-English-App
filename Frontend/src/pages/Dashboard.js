@@ -578,7 +578,6 @@ function Dashboard() {
                   fontSize: '0.9rem',
                   color: '#fff',
                   background: type === 'multiple_choice' ? '#17a2b8' :
-                             type === 'fill_in_blank' ? '#28a745' :
                              type === 'true_false' ? '#ffc107' :
                              type === 'matching' ? '#6f42c1' :
                              '#6c757d',
@@ -588,7 +587,6 @@ function Dashboard() {
                   fontWeight: 500
                 }}>
                   {type === 'multiple_choice' ? 'Multiple Choice' :
-                   type === 'fill_in_blank' ? 'Fill in the Blank' :
                    type === 'true_false' ? 'True/False' :
                    type === 'matching' ? 'Matching' :
                    type === 'short_answer' ? 'Short Answer' : type}
@@ -610,7 +608,6 @@ function Dashboard() {
               </div>
               <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>
                 {learningPreferences.overall_best_type === 'multiple_choice' ? 'Multiple Choice' :
-                 learningPreferences.overall_best_type === 'fill_in_blank' ? 'Fill in the Blank' :
                  learningPreferences.overall_best_type === 'true_false' ? 'True/False' :
                  learningPreferences.overall_best_type === 'matching' ? 'Matching' :
                  learningPreferences.overall_best_type === 'short_answer' ? 'Short Answer' :

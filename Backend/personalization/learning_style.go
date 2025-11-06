@@ -12,7 +12,6 @@ type QuestionType string
 
 const (
 	MultipleChoice QuestionType = "multiple_choice"
-	FillInBlank    QuestionType = "fill_in_blank"
 	TrueFalse      QuestionType = "true_false"
 	Matching       QuestionType = "matching"
 	ShortAnswer    QuestionType = "short_answer"
@@ -220,10 +219,10 @@ func (lsa *LearningStyleAnalyzer) AnalyzeOverallLearningStyle(userID int) (map[s
 	return map[string]interface{}{
 		"status":               "analyzed",
 		"best_question_type":   bestType,
-		"overall_best_type":    bestType, // Add this for Dashboard compatibility
+		"overall_best_type":    bestType, 
 		"overall_success_rate": overallSuccessRate,
 		"overall_score":        bestScore,
-		"recommendations":      recommendations, // Add this for Dashboard
+		"recommendations":      recommendations,
 		"preferences":          prefs,
 		"type_statistics":      typeStats,
 	}, nil
